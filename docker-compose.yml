@@ -19,9 +19,10 @@ services:
       - "11434:11434"
     volumes:
       - ollama-data:/root/.ollama
+      - ./start-ollama.sh:/start-ollama.sh
     networks:
       - app-network
-    command: ["ollama", "serve"]
+    command: ["/bin/sh", "/start-ollama.sh"]
 
 volumes:
   ollama-data:
