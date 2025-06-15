@@ -1,9 +1,18 @@
 #!/bin/sh
 
-# Installer le modèle llama3:8b (ou autre)
-echo "Vérification et installation du modèle llama3.2..."
-ollama pull llama3.2
+# Démarrer Ollama en arrière-plan
+ollama serve &
+PID=$!
 
-# Lancer le serveur Ollama
-echo "Lancement du serveur Ollama..."
-exec ollama serve
+# Attendre que le serveur soit prêt
+echo "⏳ Attente que Ollama soit prêt..."
+until curl -s http://localhost:11434 > /dev/null; do
+  sleep 1
+done
+
+# Télécharger le modèle
+echo "📦 Téléchargement du modèle llama3.2..."
+ollama run llama3.2
+
+# Rester en foreground sur le serveur
+wait $PID
