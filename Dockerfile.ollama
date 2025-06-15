@@ -1,0 +1,10 @@
+FROM ollama/ollama:latest
+
+# Copier le script dans l'image
+COPY start-ollama.sh /start-ollama.sh
+
+# Donner les droits d'exécution
+RUN chmod +x /start-ollama.sh
+
+# Définir l'entrypoint pour lancer le script
+ENTRYPOINT ["/bin/sh", "/start-ollama.sh"]

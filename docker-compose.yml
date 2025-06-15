@@ -13,16 +13,16 @@ services:
       - app-network
 
   backend:
-    image: ollama/ollama
+    build:
+      context: .
+      dockerfile: Dockerfile.ollama
     container_name: ollama
     ports:
       - "11434:11434"
     volumes:
       - ollama-data:/root/.ollama
-      - ./start-ollama.sh:/start-ollama.sh
     networks:
       - app-network
-    command: ["/bin/sh", "/start-ollama.sh"]
 
 volumes:
   ollama-data:
