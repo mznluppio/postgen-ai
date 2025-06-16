@@ -14,6 +14,9 @@ import {
   Eye,
   Hash,
   ArrowUpLeft,
+  Palette,
+  Image as ImageIcon,
+  Layout,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,6 +38,13 @@ interface BrandingData {
 interface CarouselSlide {
   title: string;
   content: string;
+  imagePrompt: string;
+  visualElements: {
+    backgroundColor: string;
+    textColor: string;
+    accentColor: string;
+    layout: 'text-focus' | 'image-focus' | 'balanced' | 'quote' | 'cta';
+  };
 }
 
 interface GeneratedContent {
@@ -91,7 +101,17 @@ export default function Generate() {
         linkedinPost: `Erreur lors de la génération du contenu. Veuillez réessayer.`,
         instagramPost: `Erreur lors de la génération du contenu. Veuillez réessayer.`,
         carousel: [
-          { title: "Erreur", content: "Impossible de générer le contenu" },
+          { 
+            title: "Erreur", 
+            content: "Impossible de générer le contenu",
+            imagePrompt: "Erreur de génération",
+            visualElements: {
+              backgroundColor: "#f3f4f6",
+              textColor: "#374151",
+              accentColor: "#ef4444",
+              layout: 'text-focus'
+            }
+          },
         ],
         hashtags: [`#${branding.topic.replace(/\s+/g, "")}`],
       });
@@ -113,6 +133,22 @@ export default function Generate() {
   const regenerateContent = () => {
     if (brandingData) {
       generateContent(brandingData);
+    }
+  };
+
+  const copyCarouselContent = () => {
+    if (generatedContent) {
+      const carouselText = generatedContent.carousel
+        .map((slide, i) => {
+          return `Slide ${i + 1}: ${slide.title}
+Contenu: ${slide.content}
+Image: ${slide.imagePrompt}
+Layout: ${slide.visualElements.layout}
+---`;
+        })
+        .join("\n\n");
+      
+      copyToClipboard(carouselText, "carousel");
     }
   };
 
@@ -148,7 +184,7 @@ export default function Generate() {
           </div>
 
           <p className="text-xl text-neutral-300 mb-8">
-            Votre contenu personnalisé est prêt
+            Votre contenu personnalisé est prêt avec design automatique
           </p>
 
           {/* Branding Preview */}
@@ -182,7 +218,7 @@ export default function Generate() {
             <div className="flex items-center space-x-2 text-blue-400">
               <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
               <span className="text-sm font-medium">
-                &quot;{brandingData.topic}&quot;
+                "{brandingData.topic}"
               </span>
             </div>
             {generatedContent?.source && (
@@ -222,15 +258,21 @@ export default function Generate() {
               Génération en cours...
             </h3>
             <p className="text-neutral-400 text-lg mb-2">
-              L&apos;IA crée votre contenu personnalisé
+              L&apos;IA crée votre contenu personnalisé avec design automatique
             </p>
-            <div className="flex items-center space-x-2 text-blue-400">
-              <div className="w-2 h-2 bg-blue-500 rounded-full animate-ping" />
-              <span className="text-sm">Optimisation du contenu...</span>
-              <div
-                className="w-2 h-2 bg-violet-500 rounded-full animate-ping"
-                style={{ animationDelay: "0.5s" }}
-              />
+            <div className="flex items-center space-x-4 text-sm">
+              <div className="flex items-center space-x-2 text-blue-400">
+                <Palette className="w-4 h-4" />
+                <span>Design visuel...</span>
+              </div>
+              <div className="flex items-center space-x-2 text-violet-400">
+                <ImageIcon className="w-4 h-4" />
+                <span>Images générées...</span>
+              </div>
+              <div className="flex items-center space-x-2 text-emerald-400">
+                <Layout className="w-4 h-4" />
+                <span>Layouts optimisés...</span>
+              </div>
             </div>
           </div>
         ) : generatedContent ? (
@@ -255,7 +297,7 @@ export default function Generate() {
                   className="data-[state=active]:bg-neutral-800 data-[state=active]:text-neutral-100 rounded-xl transition-all duration-300"
                 >
                   <Sparkles className="w-4 h-4 mr-2" />
-                  Carrousel
+                  Carrousel Visuel
                 </TabsTrigger>
                 <TabsTrigger
                   value="hashtags"
@@ -367,6 +409,53 @@ export default function Generate() {
               </TabsContent>
 
               <TabsContent value="carousel" className="space-y-8">
+                {/* Carousel Info */}
+                <Card className="bg-neutral-950/50 backdrop-blur-xl border-neutral-800">
+                  <CardHeader>
+                    <CardTitle className="text-neutral-100 flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-violet-950/50 rounded-xl flex items-center justify-center">
+                          <Sparkles className="w-5 h-5 text-violet-400" />
+                        </div>
+                        <span className="text-2xl">Carrousel Interactif</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Badge variant="outline" className="border-violet-700 text-violet-400">
+                          {generatedContent.carousel.length} slides
+                        </Badge>
+                        <Badge variant="outline" className="border-emerald-700 text-emerald-400">
+                          Design automatique
+                        </Badge>
+                      </div>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid md:grid-cols-3 gap-4 mb-6">
+                      <div className="flex items-center space-x-3 p-3 bg-neutral-900/50 rounded-xl">
+                        <Palette className="w-5 h-5 text-blue-400" />
+                        <div>
+                          <div className="text-sm font-medium text-neutral-200">Couleurs adaptées</div>
+                          <div className="text-xs text-neutral-500">Branding cohérent</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-3 p-3 bg-neutral-900/50 rounded-xl">
+                        <ImageIcon className="w-5 h-5 text-violet-400" />
+                        <div>
+                          <div className="text-sm font-medium text-neutral-200">Images générées</div>
+                          <div className="text-xs text-neutral-500">Visuels automatiques</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-3 p-3 bg-neutral-900/50 rounded-xl">
+                        <Layout className="w-5 h-5 text-emerald-400" />
+                        <div>
+                          <div className="text-sm font-medium text-neutral-200">Layouts variés</div>
+                          <div className="text-xs text-neutral-500">5 styles différents</div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
                 <BrandCarousel
                   slides={generatedContent.carousel}
                   branding={brandingData}
@@ -375,19 +464,9 @@ export default function Generate() {
                 />
 
                 {/* Copy Button */}
-                <div className="flex justify-center">
+                <div className="flex justify-center space-x-4">
                   <Button
-                    onClick={() =>
-                      copyToClipboard(
-                        generatedContent.carousel
-                          .map(
-                            (slide, i) =>
-                              `Slide ${i + 1}: ${slide.title}\n${slide.content}`,
-                          )
-                          .join("\n\n"),
-                        "carousel",
-                      )
-                    }
+                    onClick={copyCarouselContent}
                     className="bg-violet-950/50 text-violet-400 hover:bg-violet-950/70 border border-violet-800 px-8 py-3"
                   >
                     {copiedItem === "carousel" ? (
@@ -398,10 +477,50 @@ export default function Generate() {
                     ) : (
                       <>
                         <Copy className="w-5 h-5 mr-2" />
-                        Copier tout le carrousel
+                        Copier le contenu complet
                       </>
                     )}
                   </Button>
+                </div>
+
+                {/* Slides Details */}
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {generatedContent.carousel.map((slide, index) => (
+                    <Card key={index} className="bg-neutral-950/50 backdrop-blur-xl border-neutral-800">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <Badge variant="outline" className="border-neutral-700 text-neutral-400">
+                            Slide {index + 1}
+                          </Badge>
+                          <Badge 
+                            variant="outline" 
+                            className="border-violet-700 text-violet-400 text-xs"
+                          >
+                            {slide.visualElements.layout}
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <h4 className="font-semibold text-neutral-200 text-sm">
+                          {slide.title}
+                        </h4>
+                        <p className="text-xs text-neutral-400 line-clamp-3">
+                          {slide.content}
+                        </p>
+                        <div className="flex items-center space-x-2">
+                          <div 
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: slide.visualElements.textColor }}
+                          />
+                          <div 
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: slide.visualElements.accentColor }}
+                          />
+                          <span className="text-xs text-neutral-500">Couleurs auto</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
               </TabsContent>
 
@@ -522,7 +641,7 @@ export default function Generate() {
               ) : (
                 <>
                   <RefreshCw className="w-4 h-4 mr-2" />
-                  Régénérer
+                  Régénérer tout
                 </>
               )}
             </Button>
