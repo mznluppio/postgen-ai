@@ -43,7 +43,7 @@ interface CarouselSlide {
     backgroundColor: string;
     textColor: string;
     accentColor: string;
-    layout: 'text-focus' | 'image-focus' | 'balanced' | 'quote' | 'cta';
+    layout: "text-focus" | "image-focus" | "balanced" | "quote" | "cta";
   };
 }
 
@@ -101,16 +101,16 @@ export default function Generate() {
         linkedinPost: `Erreur lors de la génération du contenu. Veuillez réessayer.`,
         instagramPost: `Erreur lors de la génération du contenu. Veuillez réessayer.`,
         carousel: [
-          { 
-            title: "Erreur", 
+          {
+            title: "Erreur",
             content: "Impossible de générer le contenu",
             imagePrompt: "Erreur de génération",
             visualElements: {
               backgroundColor: "#f3f4f6",
               textColor: "#374151",
               accentColor: "#ef4444",
-              layout: 'text-focus'
-            }
+              layout: "text-focus",
+            },
           },
         ],
         hashtags: [`#${branding.topic.replace(/\s+/g, "")}`],
@@ -147,7 +147,7 @@ Layout: ${slide.visualElements.layout}
 ---`;
         })
         .join("\n\n");
-      
+
       copyToClipboard(carouselText, "carousel");
     }
   };
@@ -162,7 +162,7 @@ Layout: ${slide.visualElements.layout}
       </div>
     );
   }
-
+  console.log(generatedContent);
   return (
     <div className="min-h-screen bg-black/[0.96] antialiased bg-grid-white/[0.02] relative overflow-hidden">
       {/* Background Effects */}
@@ -230,9 +230,7 @@ Layout: ${slide.visualElements.layout}
                     : "text-amber-400 border-amber-700"
                 }`}
               >
-                {generatedContent.source === "ollama"
-                  ? "🤖 IA Locale"
-                  : "⚡ Fallback"}
+                {generatedContent.source === "ollama" ? "🤖 IA" : "⚡ Fallback"}
               </Badge>
             )}
           </div>
@@ -420,10 +418,16 @@ Layout: ${slide.visualElements.layout}
                         <span className="text-2xl">Carrousel Interactif</span>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Badge variant="outline" className="border-violet-700 text-violet-400">
+                        <Badge
+                          variant="outline"
+                          className="border-violet-700 text-violet-400"
+                        >
                           {generatedContent.carousel.length} slides
                         </Badge>
-                        <Badge variant="outline" className="border-emerald-700 text-emerald-400">
+                        <Badge
+                          variant="outline"
+                          className="border-emerald-700 text-emerald-400"
+                        >
                           Design automatique
                         </Badge>
                       </div>
@@ -434,22 +438,34 @@ Layout: ${slide.visualElements.layout}
                       <div className="flex items-center space-x-3 p-3 bg-neutral-900/50 rounded-xl">
                         <Palette className="w-5 h-5 text-blue-400" />
                         <div>
-                          <div className="text-sm font-medium text-neutral-200">Couleurs adaptées</div>
-                          <div className="text-xs text-neutral-500">Branding cohérent</div>
+                          <div className="text-sm font-medium text-neutral-200">
+                            Couleurs adaptées
+                          </div>
+                          <div className="text-xs text-neutral-500">
+                            Branding cohérent
+                          </div>
                         </div>
                       </div>
                       <div className="flex items-center space-x-3 p-3 bg-neutral-900/50 rounded-xl">
                         <ImageIcon className="w-5 h-5 text-violet-400" />
                         <div>
-                          <div className="text-sm font-medium text-neutral-200">Images générées</div>
-                          <div className="text-xs text-neutral-500">Visuels automatiques</div>
+                          <div className="text-sm font-medium text-neutral-200">
+                            Images générées
+                          </div>
+                          <div className="text-xs text-neutral-500">
+                            Visuels automatiques
+                          </div>
                         </div>
                       </div>
                       <div className="flex items-center space-x-3 p-3 bg-neutral-900/50 rounded-xl">
                         <Layout className="w-5 h-5 text-emerald-400" />
                         <div>
-                          <div className="text-sm font-medium text-neutral-200">Layouts variés</div>
-                          <div className="text-xs text-neutral-500">5 styles différents</div>
+                          <div className="text-sm font-medium text-neutral-200">
+                            Layouts variés
+                          </div>
+                          <div className="text-xs text-neutral-500">
+                            5 styles différents
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -486,14 +502,20 @@ Layout: ${slide.visualElements.layout}
                 {/* Slides Details */}
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {generatedContent.carousel.map((slide, index) => (
-                    <Card key={index} className="bg-neutral-950/50 backdrop-blur-xl border-neutral-800">
+                    <Card
+                      key={index}
+                      className="bg-neutral-950/50 backdrop-blur-xl border-neutral-800"
+                    >
                       <CardHeader className="pb-3">
                         <div className="flex items-center justify-between">
-                          <Badge variant="outline" className="border-neutral-700 text-neutral-400">
+                          <Badge
+                            variant="outline"
+                            className="border-neutral-700 text-neutral-400"
+                          >
                             Slide {index + 1}
                           </Badge>
-                          <Badge 
-                            variant="outline" 
+                          <Badge
+                            variant="outline"
                             className="border-violet-700 text-violet-400 text-xs"
                           >
                             {slide.visualElements.layout}
@@ -508,15 +530,21 @@ Layout: ${slide.visualElements.layout}
                           {slide.content}
                         </p>
                         <div className="flex items-center space-x-2">
-                          <div 
+                          <div
                             className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: slide.visualElements.textColor }}
+                            style={{
+                              backgroundColor: slide.visualElements.textColor,
+                            }}
                           />
-                          <div 
+                          <div
                             className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: slide.visualElements.accentColor }}
+                            style={{
+                              backgroundColor: slide.visualElements.accentColor,
+                            }}
                           />
-                          <span className="text-xs text-neutral-500">Couleurs auto</span>
+                          <span className="text-xs text-neutral-500">
+                            Couleurs auto
+                          </span>
                         </div>
                       </CardContent>
                     </Card>
