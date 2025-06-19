@@ -1,9 +1,20 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, Play, Pause, Share2, Download, Heart, Palette, Image as ImageIcon } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Play,
+  Pause,
+  Share2,
+  Download,
+  Heart,
+  Palette,
+  Image as ImageIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import { fetchPexelsImage } from "@/lib/fetchPexelsImage";
 
 interface CarouselSlide {
   title: string;
@@ -13,7 +24,7 @@ interface CarouselSlide {
     backgroundColor: string;
     textColor: string;
     accentColor: string;
-    layout: 'text-focus' | 'image-focus' | 'balanced' | 'quote' | 'cta';
+    layout: "text-focus" | "image-focus" | "balanced" | "quote" | "cta";
   };
 }
 
@@ -43,7 +54,26 @@ export const BrandCarousel = ({
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPlaying, setIsPlaying] = useState(autoPlay);
   const [direction, setDirection] = useState(0);
-  const [generatedImages, setGeneratedImages] = useState<{ [key: number]: string }>({});
+  const [generatedImages, setGeneratedImages] = useState<{
+    [key: number]: string;
+  }>({});
+  const [imagesLoaded, setImagesLoaded] = useState(false);
+
+  useEffect(() => {
+    const fetchImages = async () => {
+      const images: { [key: number]: string } = {};
+      for (let i = 0; i < slides.length; i++) {
+        const prompt = slides[i].imagePrompt;
+        const imageUrl = await fetchPexelsImage(prompt);
+        if (imageUrl) {
+          images[i] = imageUrl;
+        }
+      }
+      setGeneratedImages(images);
+      setImagesLoaded(true);
+    };
+    fetchImages();
+  }, [slides, branding]);
 
   useEffect(() => {
     if (isPlaying && slides.length > 1) {
@@ -54,20 +84,6 @@ export const BrandCarousel = ({
       return () => clearInterval(interval);
     }
   }, [isPlaying, slides.length, autoPlayInterval]);
-
-  // Générer des images placeholder basées sur les prompts
-  useEffect(() => {
-    const generatePlaceholderImages = () => {
-      const images: { [key: number]: string } = {};
-      slides.forEach((slide, index) => {
-        // Utiliser une API de placeholder ou générer des SVG dynamiques
-        images[index] = generateSVGPlaceholder(slide, branding, index);
-      });
-      setGeneratedImages(images);
-    };
-
-    generatePlaceholderImages();
-  }, [slides, branding]);
 
   const nextSlide = () => {
     setDirection(1);
@@ -121,14 +137,25 @@ export const BrandCarousel = ({
     );
   }
 
+  if (!imagesLoaded) {
+    return (
+      <div className="flex items-center justify-center h-96 bg-neutral-100 dark:bg-neutral-900 rounded-3xl">
+        <p className="text-neutral-500 animate-pulse">
+          Chargement des visuels...
+        </p>
+      </div>
+    );
+  }
+
   const currentSlideData = slides[currentSlide];
+  console.log(generatedImages);
 
   return (
     <div className={cn("relative w-full max-w-4xl mx-auto", className)}>
       {/* Main Carousel Container */}
       <div className="relative h-[600px] rounded-3xl overflow-hidden shadow-2xl">
         {/* Animated background pattern */}
-        <div 
+        <div
           className="absolute inset-0 opacity-20"
           style={{
             background: `linear-gradient(135deg, ${branding.primaryColor}20 0%, ${branding.secondaryColor}20 100%)`,
@@ -166,7 +193,12 @@ export const BrandCarousel = ({
               backgroundColor: currentSlideData.visualElements.backgroundColor,
             }}
           >
-            {renderSlideLayout(currentSlideData, branding, generatedImages[currentSlide], currentSlide)}
+            {renderSlideLayout(
+              currentSlideData,
+              branding,
+              generatedImages[currentSlide],
+              currentSlide,
+            )}
           </motion.div>
         </AnimatePresence>
 
@@ -203,11 +235,11 @@ export const BrandCarousel = ({
               <Play className="w-4 h-4 text-neutral-800 dark:text-neutral-200" />
             )}
           </button>
-          
+
           <button className="p-2 rounded-full bg-white/20 backdrop-blur-md hover:bg-white/30 transition-all duration-300">
             <Heart className="w-4 h-4 text-neutral-800 dark:text-neutral-200" />
           </button>
-          
+
           <button className="p-2 rounded-full bg-white/20 backdrop-blur-md hover:bg-white/30 transition-all duration-300">
             <Share2 className="w-4 h-4 text-neutral-800 dark:text-neutral-200" />
           </button>
@@ -227,7 +259,10 @@ export const BrandCarousel = ({
           </span>
           <div
             className="w-3 h-3 rounded-full animate-pulse"
-            style={{ backgroundColor: branding.secondaryColor, animationDelay: '0.5s' }}
+            style={{
+              backgroundColor: branding.secondaryColor,
+              animationDelay: "0.5s",
+            }}
           />
         </div>
       </div>
@@ -242,10 +277,13 @@ export const BrandCarousel = ({
               "w-3 h-3 rounded-full transition-all duration-300",
               index === currentSlide
                 ? "scale-125 shadow-lg"
-                : "scale-100 opacity-50 hover:opacity-75"
+                : "scale-100 opacity-50 hover:opacity-75",
             )}
             style={{
-              backgroundColor: index === currentSlide ? branding.primaryColor : branding.secondaryColor,
+              backgroundColor:
+                index === currentSlide
+                  ? branding.primaryColor
+                  : branding.secondaryColor,
             }}
           />
         ))}
@@ -259,29 +297,35 @@ export const BrandCarousel = ({
             onClick={() => goToSlide(index)}
             className={cn(
               "group relative p-4 rounded-xl border-2 text-left transition-all duration-300 hover:scale-105",
-              index === currentSlide
-                ? "shadow-lg"
-                : "hover:shadow-md"
+              index === currentSlide ? "shadow-lg" : "hover:shadow-md",
             )}
             style={{
-              borderColor: index === currentSlide ? branding.primaryColor : 'transparent',
-              backgroundColor: index === currentSlide 
-                ? `${branding.primaryColor}10` 
-                : 'rgba(255, 255, 255, 0.05)',
+              borderColor:
+                index === currentSlide ? branding.primaryColor : "transparent",
+              backgroundColor:
+                index === currentSlide
+                  ? `${branding.primaryColor}10`
+                  : "rgba(255, 255, 255, 0.05)",
             }}
           >
             <div className="text-xs opacity-60 mb-2">Slide {index + 1}</div>
             <div className="text-sm font-medium line-clamp-2 text-neutral-900 dark:text-neutral-100">
               {slide.title}
             </div>
-            
+
             {/* Layout indicator */}
             <div className="absolute bottom-2 right-2 flex items-center space-x-1">
-              {slide.visualElements.layout === 'image-focus' && <ImageIcon className="w-3 h-3 opacity-60" />}
-              {slide.visualElements.layout === 'text-focus' && <div className="w-3 h-2 bg-current opacity-60 rounded-sm" />}
-              {slide.visualElements.layout === 'cta' && <div className="w-3 h-3 bg-current opacity-60 rounded-full" />}
+              {slide.visualElements.layout === "image-focus" && (
+                <ImageIcon className="w-3 h-3 opacity-60" />
+              )}
+              {slide.visualElements.layout === "text-focus" && (
+                <div className="w-3 h-2 bg-current opacity-60 rounded-sm" />
+              )}
+              {slide.visualElements.layout === "cta" && (
+                <div className="w-3 h-3 bg-current opacity-60 rounded-full" />
+              )}
             </div>
-            
+
             {/* Active indicator */}
             {index === currentSlide && (
               <div
@@ -300,7 +344,7 @@ function renderSlideLayout(
   slide: CarouselSlide,
   branding: BrandingData,
   generatedImage: string,
-  slideIndex: number
+  slideIndex: number,
 ) {
   const { layout } = slide.visualElements;
 
@@ -343,19 +387,27 @@ function renderSlideLayout(
         {slide.content}
       </motion.p>
     ),
-    image: generatedImage && (
+    image: generatedImage ? (
       <motion.div
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.5 }}
         className="relative"
       >
-        <div 
-          dangerouslySetInnerHTML={{ __html: generatedImage }}
-          className="w-full h-full"
+        <img
+          src={generatedImage}
+          alt={slide.title}
+          width={500}
+          height={500}
+          className="object-cover rounded-xl shadow-lg"
         />
       </motion.div>
+    ) : (
+      <div className="w-[500px] h-[500px] flex items-center justify-center bg-gray-200 rounded-xl">
+        <span className="text-gray-500">Image non disponible</span>
+      </div>
     ),
+
     topicBadge: (
       <motion.div
         initial={{ opacity: 0, scale: 0.8 }}
@@ -371,14 +423,14 @@ function renderSlideLayout(
           className="font-medium text-sm"
           style={{ color: slide.visualElements.accentColor }}
         >
-          #{branding.topic.replace(/\s+/g, '')}
+          #{branding.topic.replace(/\s+/g, "")}
         </span>
       </motion.div>
-    )
+    ),
   };
 
   switch (layout) {
-    case 'text-focus':
+    case "text-focus":
       return (
         <div className="flex flex-col justify-center items-center p-12 text-center h-full">
           {commonElements.logo}
@@ -390,7 +442,7 @@ function renderSlideLayout(
         </div>
       );
 
-    case 'image-focus':
+    case "image-focus":
       return (
         <div className="grid grid-cols-1 md:grid-cols-2 h-full">
           {commonElements.logo}
@@ -405,13 +457,11 @@ function renderSlideLayout(
         </div>
       );
 
-    case 'balanced':
+    case "balanced":
       return (
         <div className="flex flex-col justify-center items-center p-12 text-center h-full space-y-8">
           {commonElements.logo}
-          <div className="max-w-md">
-            {commonElements.image}
-          </div>
+          <div className="max-w-md">{commonElements.image}</div>
           <div className="space-y-4 max-w-2xl">
             {commonElements.title}
             {commonElements.content}
@@ -420,7 +470,7 @@ function renderSlideLayout(
         </div>
       );
 
-    case 'quote':
+    case "quote":
       return (
         <div className="flex flex-col justify-center items-center p-12 text-center h-full">
           {commonElements.logo}
@@ -441,7 +491,7 @@ function renderSlideLayout(
         </div>
       );
 
-    case 'cta':
+    case "cta":
       return (
         <div className="flex flex-col justify-center items-center p-12 text-center h-full space-y-8">
           {commonElements.logo}
@@ -479,25 +529,30 @@ function renderSlideLayout(
 function generateSVGPlaceholder(
   slide: CarouselSlide,
   branding: BrandingData,
-  index: number
+  index: number,
 ): string {
   const { layout } = slide.visualElements;
-  const width = layout === 'image-focus' ? 400 : 300;
-  const height = layout === 'image-focus' ? 300 : 200;
+  const width = layout === "image-focus" ? 400 : 300;
+  const height = layout === "image-focus" ? 300 : 200;
 
   // Créer des patterns visuels basés sur le layout et le contenu
   const patterns = {
-    'text-focus': generateTextPattern(slide, branding, width, height),
-    'image-focus': generateImagePattern(slide, branding, width, height),
-    'balanced': generateBalancedPattern(slide, branding, width, height),
-    'quote': generateQuotePattern(slide, branding, width, height),
-    'cta': generateCTAPattern(slide, branding, width, height),
+    "text-focus": generateTextPattern(slide, branding, width, height),
+    "image-focus": generateImagePattern(slide, branding, width, height),
+    balanced: generateBalancedPattern(slide, branding, width, height),
+    quote: generateQuotePattern(slide, branding, width, height),
+    cta: generateCTAPattern(slide, branding, width, height),
   };
 
   return patterns[layout] || patterns.balanced;
 }
 
-function generateTextPattern(slide: CarouselSlide, branding: BrandingData, width: number, height: number): string {
+function generateTextPattern(
+  slide: CarouselSlide,
+  branding: BrandingData,
+  width: number,
+  height: number,
+): string {
   return `
     <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
       <defs>
@@ -516,7 +571,12 @@ function generateTextPattern(slide: CarouselSlide, branding: BrandingData, width
   `;
 }
 
-function generateImagePattern(slide: CarouselSlide, branding: BrandingData, width: number, height: number): string {
+function generateImagePattern(
+  slide: CarouselSlide,
+  branding: BrandingData,
+  width: number,
+  height: number,
+): string {
   return `
     <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
       <defs>
@@ -534,7 +594,12 @@ function generateImagePattern(slide: CarouselSlide, branding: BrandingData, widt
   `;
 }
 
-function generateBalancedPattern(slide: CarouselSlide, branding: BrandingData, width: number, height: number): string {
+function generateBalancedPattern(
+  slide: CarouselSlide,
+  branding: BrandingData,
+  width: number,
+  height: number,
+): string {
   return `
     <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
       <defs>
@@ -552,7 +617,12 @@ function generateBalancedPattern(slide: CarouselSlide, branding: BrandingData, w
   `;
 }
 
-function generateQuotePattern(slide: CarouselSlide, branding: BrandingData, width: number, height: number): string {
+function generateQuotePattern(
+  slide: CarouselSlide,
+  branding: BrandingData,
+  width: number,
+  height: number,
+): string {
   return `
     <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
       <defs>
@@ -570,7 +640,12 @@ function generateQuotePattern(slide: CarouselSlide, branding: BrandingData, widt
   `;
 }
 
-function generateCTAPattern(slide: CarouselSlide, branding: BrandingData, width: number, height: number): string {
+function generateCTAPattern(
+  slide: CarouselSlide,
+  branding: BrandingData,
+  width: number,
+  height: number,
+): string {
   return `
     <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
       <defs>
