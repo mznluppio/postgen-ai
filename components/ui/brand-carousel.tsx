@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft,
@@ -15,6 +15,7 @@ import {
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { fetchPexelsImage } from "@/lib/fetchPexelsImage";
+import html2canvas from "html2canvas";
 
 interface CarouselSlide {
   title: string;
@@ -58,6 +59,8 @@ export const BrandCarousel = ({
     [key: number]: string;
   }>({});
   const [imagesLoaded, setImagesLoaded] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const carouselRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchImages = async () => {
@@ -104,29 +107,30 @@ export const BrandCarousel = ({
     setIsPlaying(!isPlaying);
   };
 
-  const slideVariants = {
-    enter: (direction: number) => ({
-      x: direction > 0 ? 1000 : -1000,
-      opacity: 0,
-      scale: 0.8,
-    }),
-    center: {
-      zIndex: 1,
-      x: 0,
-      opacity: 1,
-      scale: 1,
-    },
-    exit: (direction: number) => ({
-      zIndex: 0,
-      x: direction < 0 ? 1000 : -1000,
-      opacity: 0,
-      scale: 0.8,
-    }),
-  };
-
-  const swipeConfidenceThreshold = 10000;
-  const swipePower = (offset: number, velocity: number) => {
-    return Math.abs(offset) * velocity;
+  const exportToPNG = async () => {
+    if (!carouselRef.current) return;
+    
+    setIsExporting(true);
+    try {
+      const canvas = await html2canvas(carouselRef.current, {
+        backgroundColor: '#000000',
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        foreignObjectRendering: true,
+        width: carouselRef.current.scrollWidth,
+        height: carouselRef.current.scrollHeight,
+      });
+      
+      const link = document.createElement('a');
+      link.download = `carousel-${branding.topic.replace(/\s+/g, '-')}.png`;
+      link.href = canvas.toDataURL();
+      link.click();
+    } catch (error) {
+      console.error('Erreur lors de l\'export:', error);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   if (!slides || slides.length === 0) {
@@ -147,146 +151,154 @@ export const BrandCarousel = ({
     );
   }
 
-  const currentSlideData = slides[currentSlide];
-  console.log(generatedImages);
-
   return (
-    <div className={cn("relative w-full max-w-4xl mx-auto", className)}>
-      {/* Main Carousel Container */}
-      <div className="relative h-[600px] rounded-3xl overflow-hidden shadow-2xl">
-        {/* Animated background pattern */}
-        <div
-          className="absolute inset-0 opacity-20"
-          style={{
-            background: `linear-gradient(135deg, ${branding.primaryColor}20 0%, ${branding.secondaryColor}20 100%)`,
-          }}
-        />
+    <div className={cn("relative w-full max-w-6xl mx-auto", className)}>
+      {/* Export Button */}
+      <div className="flex justify-end mb-4">
+        <button
+          onClick={exportToPNG}
+          disabled={isExporting}
+          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+        >
+          <Download className="w-4 h-4" />
+          <span>{isExporting ? 'Export...' : 'Exporter PNG'}</span>
+        </button>
+      </div>
 
-        {/* Slide Content */}
-        <AnimatePresence initial={false} custom={direction}>
-          <motion.div
-            key={currentSlide}
-            custom={direction}
-            variants={slideVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{
-              x: { type: "spring", stiffness: 300, damping: 30 },
-              opacity: { duration: 0.2 },
-              scale: { duration: 0.4 },
-            }}
-            drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={1}
-            onDragEnd={(e, { offset, velocity }) => {
-              const swipe = swipePower(offset.x, velocity.x);
+      {/* Instagram-style Carousel Container */}
+      <div 
+        ref={carouselRef}
+        className="relative bg-black rounded-2xl overflow-hidden shadow-2xl"
+        style={{ height: '600px' }}
+      >
+        {/* Carousel Track */}
+        <div className="relative h-full flex">
+          {slides.map((slide, index) => {
+            const isActive = index === currentSlide;
+            const isPrev = index === currentSlide - 1 || (currentSlide === 0 && index === slides.length - 1);
+            const isNext = index === currentSlide + 1 || (currentSlide === slides.length - 1 && index === 0);
+            const isVisible = isActive || isPrev || isNext;
 
-              if (swipe < -swipeConfidenceThreshold) {
-                nextSlide();
-              } else if (swipe > swipeConfidenceThreshold) {
-                prevSlide();
-              }
-            }}
-            className="absolute inset-0 cursor-grab active:cursor-grabbing"
-            style={{
-              backgroundColor: currentSlideData.visualElements.backgroundColor,
-            }}
-          >
-            {renderSlideLayout(
-              currentSlideData,
-              branding,
-              generatedImages[currentSlide],
-              currentSlide,
-            )}
-          </motion.div>
-        </AnimatePresence>
+            if (!isVisible) return null;
+
+            let translateX = 0;
+            let zIndex = 1;
+            let scale = 0.9;
+            let opacity = 0.7;
+
+            if (isActive) {
+              translateX = 0;
+              zIndex = 3;
+              scale = 1;
+              opacity = 1;
+            } else if (isPrev) {
+              translateX = -85; // Laisse voir 15% de l'image précédente
+              zIndex = 2;
+            } else if (isNext) {
+              translateX = 85; // Laisse voir 15% de l'image suivante
+              zIndex = 2;
+            }
+
+            return (
+              <motion.div
+                key={index}
+                className="absolute inset-0 w-full h-full"
+                initial={false}
+                animate={{
+                  x: `${translateX}%`,
+                  scale,
+                  opacity,
+                  zIndex,
+                }}
+                transition={{
+                  type: "spring",
+                  stiffness: 300,
+                  damping: 30,
+                }}
+                style={{
+                  backgroundColor: slide.visualElements.backgroundColor,
+                }}
+              >
+                {renderInstagramSlide(slide, branding, generatedImages[index], index)}
+                
+                {/* Overlay pour les slides non actives */}
+                {!isActive && (
+                  <div className="absolute inset-0 bg-black/20" />
+                )}
+              </motion.div>
+            );
+          })}
+        </div>
 
         {/* Navigation Controls */}
-        <div className="absolute inset-y-0 left-4 flex items-center">
+        <div className="absolute inset-y-0 left-4 flex items-center z-10">
           <button
             onClick={prevSlide}
             className="p-3 rounded-full bg-white/20 backdrop-blur-md hover:bg-white/30 transition-all duration-300 group"
             disabled={slides.length <= 1}
           >
-            <ChevronLeft className="w-6 h-6 text-neutral-800 dark:text-neutral-200 group-hover:scale-110 transition-transform" />
+            <ChevronLeft className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
           </button>
         </div>
 
-        <div className="absolute inset-y-0 right-4 flex items-center">
+        <div className="absolute inset-y-0 right-4 flex items-center z-10">
           <button
             onClick={nextSlide}
             className="p-3 rounded-full bg-white/20 backdrop-blur-md hover:bg-white/30 transition-all duration-300 group"
             disabled={slides.length <= 1}
           >
-            <ChevronRight className="w-6 h-6 text-neutral-800 dark:text-neutral-200 group-hover:scale-110 transition-transform" />
+            <ChevronRight className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
           </button>
         </div>
 
         {/* Top Controls */}
-        <div className="absolute top-4 right-4 flex items-center space-x-2">
+        <div className="absolute top-4 right-4 flex items-center space-x-2 z-10">
           <button
             onClick={togglePlay}
             className="p-2 rounded-full bg-white/20 backdrop-blur-md hover:bg-white/30 transition-all duration-300"
           >
             {isPlaying ? (
-              <Pause className="w-4 h-4 text-neutral-800 dark:text-neutral-200" />
+              <Pause className="w-4 h-4 text-white" />
             ) : (
-              <Play className="w-4 h-4 text-neutral-800 dark:text-neutral-200" />
+              <Play className="w-4 h-4 text-white" />
             )}
           </button>
 
           <button className="p-2 rounded-full bg-white/20 backdrop-blur-md hover:bg-white/30 transition-all duration-300">
-            <Heart className="w-4 h-4 text-neutral-800 dark:text-neutral-200" />
+            <Heart className="w-4 h-4 text-white" />
           </button>
 
           <button className="p-2 rounded-full bg-white/20 backdrop-blur-md hover:bg-white/30 transition-all duration-300">
-            <Share2 className="w-4 h-4 text-neutral-800 dark:text-neutral-200" />
+            <Share2 className="w-4 h-4 text-white" />
           </button>
         </div>
 
+        {/* Instagram-style Dots Indicator */}
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 z-10">
+          {slides.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => goToSlide(index)}
+              className={cn(
+                "w-2 h-2 rounded-full transition-all duration-300",
+                index === currentSlide
+                  ? "bg-white scale-125"
+                  : "bg-white/50 hover:bg-white/75"
+              )}
+            />
+          ))}
+        </div>
+
         {/* Slide Counter */}
-        <div className="absolute top-4 left-4 flex items-center space-x-2">
+        <div className="absolute top-4 left-4 flex items-center space-x-2 z-10">
           <div
             className="w-3 h-3 rounded-full animate-pulse"
             style={{ backgroundColor: branding.primaryColor }}
           />
-          <span
-            className="text-sm font-medium"
-            style={{ color: branding.primaryColor }}
-          >
+          <span className="text-white text-sm font-medium">
             {currentSlide + 1} / {slides.length}
           </span>
-          <div
-            className="w-3 h-3 rounded-full animate-pulse"
-            style={{
-              backgroundColor: branding.secondaryColor,
-              animationDelay: "0.5s",
-            }}
-          />
         </div>
-      </div>
-
-      {/* Slide Indicators */}
-      <div className="flex justify-center mt-8 space-x-2">
-        {slides.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => goToSlide(index)}
-            className={cn(
-              "w-3 h-3 rounded-full transition-all duration-300",
-              index === currentSlide
-                ? "scale-125 shadow-lg"
-                : "scale-100 opacity-50 hover:opacity-75",
-            )}
-            style={{
-              backgroundColor:
-                index === currentSlide
-                  ? branding.primaryColor
-                  : branding.secondaryColor,
-            }}
-          />
-        ))}
       </div>
 
       {/* Slide Thumbnails */}
@@ -340,7 +352,7 @@ export const BrandCarousel = ({
   );
 };
 
-function renderSlideLayout(
+function renderInstagramSlide(
   slide: CarouselSlide,
   branding: BrandingData,
   generatedImage: string,
@@ -359,8 +371,8 @@ function renderSlideLayout(
         <Image
           src={branding.logo}
           alt="Logo"
-          width={60}
-          height={60}
+          width={50}
+          height={50}
           className="rounded-xl shadow-lg"
         />
       </motion.div>
@@ -370,7 +382,7 @@ function renderSlideLayout(
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3, type: "spring" }}
-        className="text-3xl md:text-4xl font-bold leading-tight"
+        className="text-2xl md:text-3xl font-bold leading-tight"
         style={{ color: slide.visualElements.textColor }}
       >
         {slide.title}
@@ -381,7 +393,7 @@ function renderSlideLayout(
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4, type: "spring" }}
-        className="text-lg leading-relaxed opacity-90"
+        className="text-base leading-relaxed opacity-90"
         style={{ color: slide.visualElements.textColor }}
       >
         {slide.content}
@@ -392,19 +404,18 @@ function renderSlideLayout(
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.5 }}
-        className="relative"
+        className="relative w-full h-full"
       >
         <img
           src={generatedImage}
           alt={slide.title}
-          width={500}
-          height={500}
-          className="object-cover rounded-xl shadow-lg"
+          className="w-full h-full object-cover"
+          crossOrigin="anonymous"
         />
       </motion.div>
     ) : (
-      <div className="w-[500px] h-[500px] flex items-center justify-center bg-gray-200 rounded-xl">
-        <span className="text-gray-500">Image non disponible</span>
+      <div className="w-full h-full flex items-center justify-center bg-gray-800">
+        <span className="text-gray-400">Image non disponible</span>
       </div>
     ),
 
@@ -413,14 +424,14 @@ function renderSlideLayout(
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.6 }}
-        className="px-4 py-2 rounded-full border-2 backdrop-blur-sm"
+        className="px-3 py-1 rounded-full border backdrop-blur-sm"
         style={{
           borderColor: slide.visualElements.accentColor,
           backgroundColor: `${slide.visualElements.accentColor}20`,
         }}
       >
         <span
-          className="font-medium text-sm"
+          className="font-medium text-xs"
           style={{ color: slide.visualElements.accentColor }}
         >
           #{branding.topic.replace(/\s+/g, "")}
@@ -429,27 +440,29 @@ function renderSlideLayout(
     ),
   };
 
+  // Layout adapté pour Instagram
   switch (layout) {
-    case "text-focus":
+    case "image-focus":
       return (
-        <div className="flex flex-col justify-center items-center p-12 text-center h-full">
-          {commonElements.logo}
-          <div className="space-y-6 max-w-3xl">
-            {commonElements.title}
-            {commonElements.content}
-            {commonElements.topicBadge}
+        <div className="relative w-full h-full">
+          {commonElements.image}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+            {commonElements.logo}
+            <div className="space-y-3">
+              {commonElements.title}
+              {commonElements.content}
+              {commonElements.topicBadge}
+            </div>
           </div>
         </div>
       );
 
-    case "image-focus":
+    case "text-focus":
       return (
-        <div className="grid grid-cols-1 md:grid-cols-2 h-full">
+        <div className="flex flex-col justify-center items-center p-8 text-center h-full">
           {commonElements.logo}
-          <div className="flex items-center justify-center p-8">
-            {commonElements.image}
-          </div>
-          <div className="flex flex-col justify-center p-8 space-y-4">
+          <div className="space-y-4 max-w-lg">
             {commonElements.title}
             {commonElements.content}
             {commonElements.topicBadge}
@@ -459,10 +472,12 @@ function renderSlideLayout(
 
     case "balanced":
       return (
-        <div className="flex flex-col justify-center items-center p-12 text-center h-full space-y-8">
-          {commonElements.logo}
-          <div className="max-w-md">{commonElements.image}</div>
-          <div className="space-y-4 max-w-2xl">
+        <div className="grid grid-cols-2 h-full">
+          <div className="relative">
+            {commonElements.image}
+          </div>
+          <div className="flex flex-col justify-center p-6 space-y-4">
+            {commonElements.logo}
             {commonElements.title}
             {commonElements.content}
             {commonElements.topicBadge}
@@ -472,37 +487,49 @@ function renderSlideLayout(
 
     case "quote":
       return (
-        <div className="flex flex-col justify-center items-center p-12 text-center h-full">
-          {commonElements.logo}
-          <div className="space-y-6 max-w-3xl">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.2 }}
-              className="text-6xl opacity-20"
-              style={{ color: slide.visualElements.accentColor }}
-            >
-              "
-            </motion.div>
-            {commonElements.title}
-            {commonElements.content}
-            {commonElements.topicBadge}
+        <div className="flex flex-col justify-center items-center p-8 text-center h-full relative">
+          {generatedImage && (
+            <div className="absolute inset-0">
+              <img
+                src={generatedImage}
+                alt={slide.title}
+                className="w-full h-full object-cover opacity-30"
+                crossOrigin="anonymous"
+              />
+            </div>
+          )}
+          <div className="relative z-10">
+            {commonElements.logo}
+            <div className="space-y-4 max-w-lg">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2 }}
+                className="text-4xl opacity-40"
+                style={{ color: slide.visualElements.accentColor }}
+              >
+                "
+              </motion.div>
+              {commonElements.title}
+              {commonElements.content}
+              {commonElements.topicBadge}
+            </div>
           </div>
         </div>
       );
 
     case "cta":
       return (
-        <div className="flex flex-col justify-center items-center p-12 text-center h-full space-y-8">
+        <div className="flex flex-col justify-center items-center p-8 text-center h-full space-y-6">
           {commonElements.logo}
-          <div className="space-y-6 max-w-3xl">
+          <div className="space-y-4 max-w-lg">
             {commonElements.title}
             {commonElements.content}
             <motion.button
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7 }}
-              className="px-8 py-4 rounded-full font-semibold text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+              className="px-6 py-3 rounded-full font-semibold text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
               style={{ backgroundColor: slide.visualElements.accentColor }}
             >
               Découvrir maintenant
@@ -514,9 +541,9 @@ function renderSlideLayout(
 
     default:
       return (
-        <div className="flex flex-col justify-center items-center p-12 text-center h-full">
+        <div className="flex flex-col justify-center items-center p-8 text-center h-full">
           {commonElements.logo}
-          <div className="space-y-6 max-w-3xl">
+          <div className="space-y-4 max-w-lg">
             {commonElements.title}
             {commonElements.content}
             {commonElements.topicBadge}
@@ -524,141 +551,4 @@ function renderSlideLayout(
         </div>
       );
   }
-}
-
-function generateSVGPlaceholder(
-  slide: CarouselSlide,
-  branding: BrandingData,
-  index: number,
-): string {
-  const { layout } = slide.visualElements;
-  const width = layout === "image-focus" ? 400 : 300;
-  const height = layout === "image-focus" ? 300 : 200;
-
-  // Créer des patterns visuels basés sur le layout et le contenu
-  const patterns = {
-    "text-focus": generateTextPattern(slide, branding, width, height),
-    "image-focus": generateImagePattern(slide, branding, width, height),
-    balanced: generateBalancedPattern(slide, branding, width, height),
-    quote: generateQuotePattern(slide, branding, width, height),
-    cta: generateCTAPattern(slide, branding, width, height),
-  };
-
-  return patterns[layout] || patterns.balanced;
-}
-
-function generateTextPattern(
-  slide: CarouselSlide,
-  branding: BrandingData,
-  width: number,
-  height: number,
-): string {
-  return `
-    <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" style="stop-color:${branding.primaryColor};stop-opacity:0.3" />
-          <stop offset="100%" style="stop-color:${branding.secondaryColor};stop-opacity:0.3" />
-        </linearGradient>
-      </defs>
-      <rect width="100%" height="100%" fill="url(#textGrad)"/>
-      <circle cx="${width * 0.2}" cy="${height * 0.3}" r="20" fill="${branding.primaryColor}" opacity="0.4"/>
-      <circle cx="${width * 0.8}" cy="${height * 0.7}" r="15" fill="${branding.secondaryColor}" opacity="0.4"/>
-      <rect x="${width * 0.1}" y="${height * 0.4}" width="${width * 0.8}" height="4" fill="${branding.primaryColor}" opacity="0.6"/>
-      <rect x="${width * 0.1}" y="${height * 0.5}" width="${width * 0.6}" height="4" fill="${branding.secondaryColor}" opacity="0.6"/>
-      <rect x="${width * 0.1}" y="${height * 0.6}" width="${width * 0.7}" height="4" fill="${branding.primaryColor}" opacity="0.6"/>
-    </svg>
-  `;
-}
-
-function generateImagePattern(
-  slide: CarouselSlide,
-  branding: BrandingData,
-  width: number,
-  height: number,
-): string {
-  return `
-    <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <radialGradient id="imageGrad" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" style="stop-color:${branding.primaryColor};stop-opacity:0.4" />
-          <stop offset="100%" style="stop-color:${branding.secondaryColor};stop-opacity:0.2" />
-        </radialGradient>
-      </defs>
-      <rect width="100%" height="100%" fill="url(#imageGrad)"/>
-      <polygon points="${width * 0.3},${height * 0.2} ${width * 0.7},${height * 0.2} ${width * 0.5},${height * 0.6}" fill="${branding.primaryColor}" opacity="0.5"/>
-      <circle cx="${width * 0.5}" cy="${height * 0.75}" r="30" fill="${branding.secondaryColor}" opacity="0.4"/>
-      <rect x="${width * 0.2}" y="${height * 0.1}" width="8" height="${height * 0.8}" fill="${branding.primaryColor}" opacity="0.3"/>
-      <rect x="${width * 0.8}" y="${height * 0.1}" width="8" height="${height * 0.8}" fill="${branding.secondaryColor}" opacity="0.3"/>
-    </svg>
-  `;
-}
-
-function generateBalancedPattern(
-  slide: CarouselSlide,
-  branding: BrandingData,
-  width: number,
-  height: number,
-): string {
-  return `
-    <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="balancedGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" style="stop-color:${branding.primaryColor};stop-opacity:0.3" />
-          <stop offset="50%" style="stop-color:${branding.secondaryColor};stop-opacity:0.2" />
-          <stop offset="100%" style="stop-color:${branding.primaryColor};stop-opacity:0.3" />
-        </linearGradient>
-      </defs>
-      <rect width="100%" height="100%" fill="url(#balancedGrad)"/>
-      <circle cx="${width * 0.25}" cy="${height * 0.25}" r="25" fill="${branding.primaryColor}" opacity="0.4"/>
-      <circle cx="${width * 0.75}" cy="${height * 0.75}" r="20" fill="${branding.secondaryColor}" opacity="0.4"/>
-      <path d="M ${width * 0.1} ${height * 0.5} Q ${width * 0.5} ${height * 0.2} ${width * 0.9} ${height * 0.5}" stroke="${branding.primaryColor}" stroke-width="3" fill="none" opacity="0.5"/>
-    </svg>
-  `;
-}
-
-function generateQuotePattern(
-  slide: CarouselSlide,
-  branding: BrandingData,
-  width: number,
-  height: number,
-): string {
-  return `
-    <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <radialGradient id="quoteGrad" cx="30%" cy="30%" r="70%">
-          <stop offset="0%" style="stop-color:${branding.secondaryColor};stop-opacity:0.4" />
-          <stop offset="100%" style="stop-color:${branding.primaryColor};stop-opacity:0.2" />
-        </radialGradient>
-      </defs>
-      <rect width="100%" height="100%" fill="url(#quoteGrad)"/>
-      <text x="${width * 0.2}" y="${height * 0.4}" font-family="serif" font-size="60" fill="${branding.primaryColor}" opacity="0.3">"</text>
-      <text x="${width * 0.7}" y="${height * 0.7}" font-family="serif" font-size="60" fill="${branding.secondaryColor}" opacity="0.3">"</text>
-      <circle cx="${width * 0.8}" cy="${height * 0.2}" r="12" fill="${branding.primaryColor}" opacity="0.4"/>
-      <circle cx="${width * 0.2}" cy="${height * 0.8}" r="8" fill="${branding.secondaryColor}" opacity="0.4"/>
-    </svg>
-  `;
-}
-
-function generateCTAPattern(
-  slide: CarouselSlide,
-  branding: BrandingData,
-  width: number,
-  height: number,
-): string {
-  return `
-    <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="ctaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" style="stop-color:${branding.primaryColor};stop-opacity:0.5" />
-          <stop offset="100%" style="stop-color:${branding.secondaryColor};stop-opacity:0.3" />
-        </linearGradient>
-      </defs>
-      <rect width="100%" height="100%" fill="url(#ctaGrad)"/>
-      <rect x="${width * 0.3}" y="${height * 0.4}" width="${width * 0.4}" height="${height * 0.2}" rx="20" fill="${branding.primaryColor}" opacity="0.6"/>
-      <polygon points="${width * 0.5},${height * 0.2} ${width * 0.6},${height * 0.35} ${width * 0.4},${height * 0.35}" fill="${branding.secondaryColor}" opacity="0.5"/>
-      <circle cx="${width * 0.15}" cy="${height * 0.5}" r="15" fill="${branding.primaryColor}" opacity="0.4"/>
-      <circle cx="${width * 0.85}" cy="${height * 0.5}" r="15" fill="${branding.secondaryColor}" opacity="0.4"/>
-    </svg>
-  `;
 }
