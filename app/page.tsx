@@ -17,7 +17,8 @@ import { Input } from "@/components/ui/input";
 import { BackgroundBeams } from "@/components/ui/background-beams";
 import { Spotlight } from "@/components/ui/spotlight";
 import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
-import { BentoGrid, BentoGridItem } from "@/components/ui/bento-grid";
+import { client } from "@/lib/appwrite";
+import { AppwriteException } from "appwrite";
 
 const suggestions = [
   "Intelligence artificielle et productivité",
@@ -63,6 +64,40 @@ export default function Home() {
   const [isVisible, setIsVisible] = useState(false);
   const [currentSuggestion, setCurrentSuggestion] = useState(0);
   const router = useRouter();
+  const [logs, setLogs] = useState([]);
+  const [status, setStatus] = useState("idle");
+  const [showLogs, setShowLogs] = useState(false);
+
+  async function sendPing() {
+    if (status === "loading") return;
+    setStatus("loading");
+    try {
+      const result = await client.ping();
+      const log = {
+        date: new Date(),
+        method: "GET",
+        path: "/v1/ping",
+        status: 200,
+        response: JSON.stringify(result),
+      };
+      setLogs((prevLogs) => [log, ...prevLogs]);
+      setStatus("success");
+    } catch (err) {
+      const log = {
+        date: new Date(),
+        method: "GET",
+        path: "/v1/ping",
+        status: err instanceof AppwriteException ? err.code : 500,
+        response:
+          err instanceof AppwriteException
+            ? err.message
+            : "Something went wrong",
+      };
+      setLogs((prevLogs: unknow) => [log, ...prevLogs]);
+      setStatus("error");
+    }
+    setShowLogs(true);
+  }
 
   useEffect(() => {
     setIsVisible(true);
