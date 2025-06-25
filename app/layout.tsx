@@ -2,6 +2,8 @@ import "./globals.css";
 import type { Metadata } from "next";
 import { Space_Grotesk } from "next/font/google";
 import clsx from "clsx";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { Toaster } from "@/components/ui/toaster";
 
 const inter = Space_Grotesk({ subsets: ["latin"] });
 
@@ -18,7 +20,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr">
-      <body className={clsx(inter.className)}>{children}</body>
+      <body className={clsx(inter.className)}>
+        <AuthProvider>
+          {children}
+          <Toaster />
+        </AuthProvider>
+      </body>
     </html>
   );
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-
+import { useAuth } from "@/contexts/AuthContext"
 import {
   Sidebar,
   SidebarContent,
@@ -15,48 +15,27 @@ import {
   SidebarRail,
   SidebarSeparator,
 } from "@/components/ui/sidebar"
-import { OrganizationSwitcher } from "./organization-switcher"
-import { ProjectSwitcher } from "./project-switcher"
+import { OrganizationSwitcher } from "@/components/dashboard/OrganizationSwitcher"
 import { UserMenu } from "./user-menu"
 import { NavigationSection } from "./navigation-section"
 import {
-  organizations,
   mainNavigation,
   contentCreation,
   managementTools,
   organizationSettings,
-  type Organization,
-  type Project,
 } from "@/lib/navigation-data"
 
 export function AppSidebar() {
-  const [selectedOrg, setSelectedOrg] = React.useState<Organization>(organizations[0])
-  const [selectedProject, setSelectedProject] = React.useState<Project | null>(null)
+  const { user } = useAuth()
 
-  const user = {
-    name: "Sarah Johnson",
-    email: "sarah@postgen.ai",
-    avatar: "/placeholder.svg?height=32&width=32",
-  }
+  if (!user) return null
 
   return (
     <Sidebar variant="inset" collapsible="icon">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <OrganizationSwitcher selectedOrg={selectedOrg} onOrgChange={setSelectedOrg} />
-          </SidebarMenuItem>
-        </SidebarMenu>
-
-        <SidebarSeparator className="mx-0" />
-
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <ProjectSwitcher
-              selectedProject={selectedProject}
-              organizationId={selectedOrg.id}
-              onProjectChange={setSelectedProject}
-            />
+            <OrganizationSwitcher />
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
@@ -64,7 +43,7 @@ export function AppSidebar() {
       <SidebarContent>
         {/* Main Navigation */}
         <SidebarGroup>
-          <SidebarGroupLabel>Main</SidebarGroupLabel>
+          <SidebarGroupLabel>Principal</SidebarGroupLabel>
           <SidebarGroupContent>
             <NavigationSection items={mainNavigation} />
           </SidebarGroupContent>
@@ -72,7 +51,7 @@ export function AppSidebar() {
 
         {/* Content Creation */}
         <SidebarGroup>
-          <SidebarGroupLabel>Content Creation</SidebarGroupLabel>
+          <SidebarGroupLabel>Création de contenu</SidebarGroupLabel>
           <SidebarGroupContent>
             <NavigationSection items={contentCreation} defaultOpen={["Social Media"]} />
           </SidebarGroupContent>
@@ -80,7 +59,7 @@ export function AppSidebar() {
 
         {/* Management Tools */}
         <SidebarGroup>
-          <SidebarGroupLabel>Tools & Management</SidebarGroupLabel>
+          <SidebarGroupLabel>Outils & Gestion</SidebarGroupLabel>
           <SidebarGroupContent>
             <NavigationSection items={managementTools} />
           </SidebarGroupContent>
@@ -88,7 +67,7 @@ export function AppSidebar() {
 
         {/* Organization Settings */}
         <SidebarGroup>
-          <SidebarGroupLabel>Organization</SidebarGroupLabel>
+          <SidebarGroupLabel>Organisation</SidebarGroupLabel>
           <SidebarGroupContent>
             <NavigationSection items={organizationSettings} />
           </SidebarGroupContent>

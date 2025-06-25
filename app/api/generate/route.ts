@@ -42,6 +42,8 @@ export async function POST(request: NextRequest) {
 
     const copilotAPI = process.env.COPILOT_API || "http://localhost:8000";
 
+    console.log(copilotAPI);
+
     const unifiedPrompt = `Tu es un expert en marketing de contenu, copywriting et storytelling visuel. Gère l'ensemble du contenu pour une marque sur le sujet : "${topic}".
 
 STYLE GLOBAL :
