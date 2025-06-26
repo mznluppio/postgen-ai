@@ -15,10 +15,18 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import AuthPage from "@/app/auth/page";
 import { useState } from "react";
+import { ID, Storage } from "appwrite";
+import { client } from "@/lib/appwrite-config";
+
+const storage = new Storage(client);
 
 export default function OrganizationSettingsPage() {
   const { currentOrganization, updateCurrentOrganization } = useAuth();
   const [name, setName] = useState(currentOrganization?.name || "");
+  const [description, setDescription] = useState(
+    currentOrganization?.description || "",
+  );
+  const [logoFile, setLogoFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
@@ -42,8 +50,26 @@ export default function OrganizationSettingsPage() {
   const handleSubmit = async () => {
     setLoading(true);
     setSuccess(false);
+
     try {
-      await updateCurrentOrganization({ name });
+      let logoUrl = currentOrganization.logo;
+
+      if (logoFile) {
+        const uploaded = await storage.createFile(
+          process.env.NEXT_PUBLIC_APPWRITE_ORGSLOGO_ID || "",
+          ID.unique(),
+          logoFile,
+        );
+
+        logoUrl = uploaded.$id;
+      }
+
+      await updateCurrentOrganization({
+        name,
+        logo: logoUrl,
+        description,
+      });
+
       setSuccess(true);
     } catch (error) {
       console.error("Erreur lors de la mise à jour :", error);
@@ -72,6 +98,28 @@ export default function OrganizationSettingsPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Nom de l'organisation"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="org-description">
+              Description de l'organisation
+            </Label>
+            <Input
+              id="org-description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Décrivez votre organisation"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="logo">Logo de l'organisation</Label>
+            <Input
+              id="logo"
+              type="file"
+              accept="image/*"
+              onChange={(e) => setLogoFile(e.target.files?.[0] || null)}
             />
           </div>
 

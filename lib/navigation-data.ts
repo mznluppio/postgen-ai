@@ -15,32 +15,32 @@ import {
   Settings,
   Users,
   Zap,
-} from "lucide-react"
+} from "lucide-react";
 
 export interface Organization {
-  id: string
-  name: string
-  logo: string
-  plan: "Starter" | "Pro" | "Enterprise"
-  role: "Owner" | "Admin" | "Member"
+  id: string;
+  name: string;
+  logo: string;
+  plan: "Starter" | "Pro" | "Enterprise";
+  role: "Owner" | "Admin" | "Member";
 }
 
 export interface Project {
-  id: string
-  name: string
-  description: string
-  organizationId: string
-  createdAt: string
-  status: "Active" | "Paused" | "Completed"
+  id: string;
+  name: string;
+  description: string;
+  organizationId: string;
+  createdAt: string;
+  status: "Active" | "Paused" | "Completed";
 }
 
 export interface NavigationItem {
-  title: string
-  url: string
-  icon: any
-  badge?: string
-  isActive?: boolean
-  items?: NavigationItem[]
+  title: string;
+  url: string;
+  icon: any;
+  badge?: string;
+  isActive?: boolean;
+  items?: NavigationItem[];
 }
 
 export const organizations: Organization[] = [
@@ -65,7 +65,7 @@ export const organizations: Organization[] = [
     plan: "Starter",
     role: "Member",
   },
-]
+];
 
 export const projects: Project[] = [
   {
@@ -84,7 +84,7 @@ export const projects: Project[] = [
     createdAt: "2024-01-10",
     status: "Active",
   },
-]
+];
 
 export const mainNavigation: NavigationItem[] = [
   {
@@ -100,7 +100,7 @@ export const mainNavigation: NavigationItem[] = [
   },
   {
     title: "Projects",
-    url: "/projects",
+    url: "/dashboard/projects",
     icon: Briefcase,
   },
   {
@@ -113,45 +113,93 @@ export const mainNavigation: NavigationItem[] = [
     url: "/analytics",
     icon: BarChart3,
   },
-]
+];
 
 export const contentCreation: NavigationItem[] = [
   {
     title: "Social Media",
-    url: "/content/social",
+    url: "/dashboard/content/social",
     icon: MessageSquare,
     items: [
-      { title: "LinkedIn Posts", url: "/content/social/linkedin", icon: MessageSquare },
-      { title: "Twitter/X Posts", url: "/content/social/twitter", icon: MessageSquare },
-      { title: "Facebook Posts", url: "/content/social/facebook", icon: MessageSquare },
-      { title: "Instagram Posts", url: "/content/social/instagram", icon: MessageSquare },
+      {
+        title: "LinkedIn Posts",
+        url: "/dashboard/content/social/linkedin",
+        icon: MessageSquare,
+      },
+      {
+        title: "Twitter/X Posts",
+        url: "/dashboard/content/social/twitter",
+        icon: MessageSquare,
+      },
+      {
+        title: "Facebook Posts",
+        url: "/dashboard/content/social/facebook",
+        icon: MessageSquare,
+      },
+      {
+        title: "Instagram Posts",
+        url: "/dashboard/content/social/instagram",
+        icon: MessageSquare,
+      },
     ],
   },
   {
     title: "Visual Content",
-    url: "/content/visual",
+    url: "/dashboard/content/visual",
     icon: ImageIcon,
     items: [
-      { title: "Carousels", url: "/content/visual/carousels", icon: ImageIcon },
-      { title: "Infographics", url: "/content/visual/infographics", icon: ImageIcon },
-      { title: "Stories", url: "/content/visual/stories", icon: ImageIcon },
-      { title: "Thumbnails", url: "/content/visual/thumbnails", icon: ImageIcon },
+      {
+        title: "Carousels",
+        url: "/dashboard/content/visual/carousels",
+        icon: ImageIcon,
+      },
+      {
+        title: "Infographics",
+        url: "/dashboard/content/visual/infographics",
+        icon: ImageIcon,
+      },
+      {
+        title: "Stories",
+        url: "/dashboard/content/visual/stories",
+        icon: ImageIcon,
+      },
+      {
+        title: "Thumbnails",
+        url: "/dashboard/content/visual/thumbnails",
+        icon: ImageIcon,
+      },
     ],
   },
   {
     title: "Long-form Content",
-    url: "/content/articles",
+    url: "/dashboard/content/articles",
     icon: FileText,
     items: [
-      { title: "Blog Articles", url: "/content/articles/blog", icon: FileText },
-      { title: "LinkedIn Articles", url: "/content/articles/linkedin", icon: FileText },
-      { title: "Case Studies", url: "/content/articles/case-studies", icon: FileText },
-      { title: "White Papers", url: "/content/articles/whitepapers", icon: FileText },
+      {
+        title: "Blog Articles",
+        url: "/dashboard/content/articles/blog",
+        icon: FileText,
+      },
+      {
+        title: "LinkedIn Articles",
+        url: "/dashboard/content/articles/linkedin",
+        icon: FileText,
+      },
+      {
+        title: "Case Studies",
+        url: "/dashboard/content/articles/case-studies",
+        icon: FileText,
+      },
+      {
+        title: "White Papers",
+        url: "/dashboard/content/articles/whitepapers",
+        icon: FileText,
+      },
     ],
   },
   {
     title: "Email Marketing",
-    url: "/content/email",
+    url: "/dashboard/content/email",
     icon: Mail,
     items: [
       { title: "Email Campaigns", url: "/content/email/campaigns", icon: Mail },
@@ -160,7 +208,7 @@ export const contentCreation: NavigationItem[] = [
       { title: "Templates", url: "/content/email/templates", icon: Mail },
     ],
   },
-]
+];
 
 export const managementTools: NavigationItem[] = [
   {
@@ -188,22 +236,22 @@ export const managementTools: NavigationItem[] = [
     url: "/tools/ideas",
     icon: Lightbulb,
   },
-]
+];
 
 export const organizationSettings: NavigationItem[] = [
   {
     title: "Organization Settings",
-    url: "/settings/organization",
+    url: "/dashboard/settings/organization",
     icon: Building2,
   },
   {
     title: "Team Management",
-    url: "/settings/team",
+    url: "/dashboard/settings/team",
     icon: Users,
   },
   {
     title: "Integrations",
-    url: "/settings/integrations",
+    url: "/dashboard/settings/integrations",
     icon: Settings,
   },
-]
+];

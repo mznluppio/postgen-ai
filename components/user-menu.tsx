@@ -21,6 +21,7 @@ import {
 import { SidebarMenuButton } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useRouter } from "next/navigation";
+import { getAvatarUrl } from "@/lib/get-avatar-url";
 
 interface UserMenuProps {
   user: {
@@ -46,8 +47,10 @@ export function UserMenu({ user }: UserMenuProps) {
       console.error("Logout error:", error);
     }
   };
-
+  console.log(user);
   const router = useRouter();
+  const avatarUrl = getAvatarUrl(user.avatar);
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -57,7 +60,7 @@ export function UserMenu({ user }: UserMenuProps) {
         >
           <Avatar className="h-8 w-8 rounded-lg">
             <AvatarImage
-              src={user.avatar || "/placeholder.svg"}
+              src={avatarUrl || "/placeholder.svg"}
               alt={user.name}
             />
             <AvatarFallback className="rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 text-white">
@@ -83,7 +86,7 @@ export function UserMenu({ user }: UserMenuProps) {
           <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
             <Avatar className="h-8 w-8 rounded-lg">
               <AvatarImage
-                src={user.avatar || "/placeholder.svg"}
+                src={avatarUrl || "/placeholder.svg"}
                 alt={user.name}
               />
               <AvatarFallback className="rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 text-white">

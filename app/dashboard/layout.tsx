@@ -1,11 +1,8 @@
-// app/dashboard/layout.tsx
 "use client";
 
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app-sidebar";
-import { SidebarInset } from "@/components/ui/sidebar";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
+import { useAuth } from "@/contexts/AuthContext";
+import { usePathname } from "next/navigation";
+import Link from "next/link";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -14,7 +11,10 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { useAuth } from "@/contexts/AuthContext";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
+import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import AuthPage from "../auth/page";
 
@@ -24,6 +24,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { currentOrganization } = useAuth();
+  const pathname = usePathname();
 
   if (!currentOrganization) {
     return (
@@ -32,6 +33,11 @@ export default function DashboardLayout({
       </AuthGuard>
     );
   }
+
+  // Génère les segments du chemin
+  const segments = pathname
+    .split("/")
+    .filter((seg) => seg && seg !== "dashboard");
 
   return (
     <AuthGuard fallback={<AuthPage />}>
@@ -44,14 +50,31 @@ export default function DashboardLayout({
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="#">
+                  <BreadcrumbLink href="/dashboard">
                     {currentOrganization.name}
                   </BreadcrumbLink>
                 </BreadcrumbItem>
-                <BreadcrumbSeparator className="hidden md:block" />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Dashboard</BreadcrumbPage>
-                </BreadcrumbItem>
+
+                {segments.map((segment, index) => {
+                  const href = `/dashboard/${segments.slice(0, index + 1).join("/")}`;
+                  const isLast = index === segments.length - 1;
+                  const label = decodeURIComponent(segment)
+                    .replace(/-/g, " ")
+                    .replace(/\b\w/g, (l) => l.toUpperCase());
+
+                  return (
+                    <span key={href} className="flex items-center">
+                      <BreadcrumbSeparator />
+                      <BreadcrumbItem>
+                        {isLast ? (
+                          <BreadcrumbPage>{label}</BreadcrumbPage>
+                        ) : (
+                          <BreadcrumbLink href={href}>{label}</BreadcrumbLink>
+                        )}
+                      </BreadcrumbItem>
+                    </span>
+                  );
+                })}
               </BreadcrumbList>
             </Breadcrumb>
           </header>
