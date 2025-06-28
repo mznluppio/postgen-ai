@@ -30,10 +30,12 @@ import {
   Sparkles,
   TrendingUp,
   Users,
+  MessageSquare,
   FileText,
   Calendar,
 } from "lucide-react";
 import { CreateOrganizationDialog } from "@/components/dashboard/CreateOrganizationDialog";
+import FeatureOverview from "@/components/dashboard/FeatureOverview";
 import AuthPage from "../auth/page";
 
 export default function Dashboard() {
@@ -78,6 +80,24 @@ export default function Dashboard() {
             Créer du contenu
           </a>
         </Button>
+      </div>
+
+      {/* Prospection */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Prospection</CardTitle>
+            <MessageSquare className="h-4 w-4 text-pink-600" />
+          </CardHeader>
+          <CardContent>
+            <Button className="w-full" size="sm" asChild>
+              <a href="/dashboard/prospect/linkedin">
+                <Plus className="mr-2 h-4 w-4" />
+                Démarrer la prospection
+              </a>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Quick Actions */}
@@ -140,6 +160,9 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Feature Overview */}
+      <FeatureOverview />
 
       {/* Recent Activity */}
       <div className="grid gap-4 md:grid-cols-2">

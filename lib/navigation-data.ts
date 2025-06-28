@@ -144,6 +144,28 @@ export const contentCreation: NavigationItem[] = [
     ],
   },
   {
+    title: "Prospection",
+    url: "/dashboard/prospect",
+    icon: MessageSquare,
+    items: [
+      {
+        title: "LinkedIn",
+        url: "/dashboard/prospect/linkedin",
+        icon: MessageSquare,
+      },
+      {
+        title: "Instagram",
+        url: "/dashboard/prospect/instagram",
+        icon: MessageSquare,
+      },
+      {
+        title: "Email",
+        url: "/dashboard/prospect/email",
+        icon: Mail,
+      },
+    ],
+  },
+  {
     title: "Visual Content",
     url: "/dashboard/content/visual",
     icon: ImageIcon,
