@@ -94,7 +94,7 @@ export default function SocialProjectSelectorPage() {
               <CardFooter>
                 <Button asChild className="w-full">
                   <Link
-                    href={`/dashboard/content/social/${type}/${project.$id}`}
+                    href={`/dashboard/content/visual/${type}/${project.$id}`}
                   >
                     <Plus className="mr-2 h-4 w-4" />
                     Créer du contenu
