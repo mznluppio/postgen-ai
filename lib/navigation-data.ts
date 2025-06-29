@@ -4,13 +4,16 @@ import {
   Briefcase,
   Building2,
   Calendar,
+  CreditCard,
   FileText,
   FolderOpen,
   Home,
+  HelpCircle,
   ImageIcon,
   Lightbulb,
   Mail,
   MessageSquare,
+  Bell,
   Palette,
   Settings,
   Users,
@@ -269,5 +272,33 @@ export const organizationSettings: NavigationItem[] = [
     title: "Integrations",
     url: "/dashboard/settings/integrations",
     icon: Settings,
+  },
+];
+
+export const accountNavigation: NavigationItem[] = [
+  {
+    title: "Profil",
+    url: "/dashboard/profile",
+    icon: Users,
+  },
+  {
+    title: "Param\u00e8tres du compte",
+    url: "/dashboard/account",
+    icon: Settings,
+  },
+  {
+    title: "Notifications",
+    url: "/dashboard/notifications",
+    icon: Bell,
+  },
+  {
+    title: "Facturation",
+    url: "/dashboard/billing",
+    icon: CreditCard,
+  },
+  {
+    title: "Aide & Support",
+    url: "/dashboard/help",
+    icon: HelpCircle,
   },
 ];

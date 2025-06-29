@@ -23,6 +23,7 @@ import {
   contentCreation,
   managementTools,
   organizationSettings,
+  accountNavigation,
 } from "@/lib/navigation-data"
 
 export function AppSidebar() {
@@ -70,6 +71,14 @@ export function AppSidebar() {
           <SidebarGroupLabel>Organisation</SidebarGroupLabel>
           <SidebarGroupContent>
             <NavigationSection items={organizationSettings} />
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Account */}
+        <SidebarGroup>
+          <SidebarGroupLabel>Mon compte</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <NavigationSection items={accountNavigation} />
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>

@@ -106,20 +106,20 @@ export function UserMenu({ user }: UserMenuProps) {
           <User className="mr-2 h-4 w-4" />
           Profil
         </DropdownMenuItem>
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={() => router.push("/dashboard/account")}>
           <Settings className="mr-2 h-4 w-4" />
           Paramètres du compte
         </DropdownMenuItem>
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={() => router.push("/dashboard/notifications")}>
           <Bell className="mr-2 h-4 w-4" />
           Notifications
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={() => router.push("/dashboard/billing")}>
           <CreditCard className="mr-2 h-4 w-4" />
           Facturation
         </DropdownMenuItem>
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={() => router.push("/dashboard/help")}>
           <HelpCircle className="mr-2 h-4 w-4" />
           Aide & Support
         </DropdownMenuItem>

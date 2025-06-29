@@ -255,6 +255,27 @@ export class AuthService {
     }
   }
 
+  // Account settings
+  async updateAccountName(newName: string) {
+    try {
+      await account.updateName(newName);
+      const user = await this.getCurrentUser();
+      if (user) {
+        await this.updateUserProfile(user.$id, { name: newName });
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async updatePassword(newPassword: string) {
+    try {
+      await account.updatePassword(newPassword);
+    } catch (error) {
+      throw error;
+    }
+  }
+
   // Team management
   async getOrganizationMembers(orgId: string) {
     try {
