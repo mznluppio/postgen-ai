@@ -3,10 +3,9 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { AuthGuard } from "@/components/auth/AuthGuard";
-import AuthPage from "./auth/page";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import LandingPage from "@/components/landing-page";
 
 export default function Home() {
   const { user, loading } = useAuth();
@@ -29,14 +28,16 @@ export default function Home() {
     );
   }
 
+  if (!user) {
+    return <LandingPage />;
+  }
+
   return (
-    <AuthGuard fallback={<AuthPage />}>
-      <div className="min-h-screen flex items-center justify-center">
-        <Button disabled>
-          <Loader2 className="w-4 h-4 animate-spin" />
-          Chargement...
-        </Button>
-      </div>
-    </AuthGuard>
+    <div className="min-h-screen flex items-center justify-center">
+      <Button disabled>
+        <Loader2 className="w-4 h-4 animate-spin" />
+        Chargement...
+      </Button>
+    </div>
   );
 }
