@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
 
     if (organizationId) {
       const org = await authService.getOrganization(organizationId);
-      const allowed = await checkLimit(org.plan as Plan, organizationId);
+      const allowed = await checkLimit(organizationId, org.plan as Plan);
       if (!allowed) {
         return NextResponse.json({ error: "limit reached" }, { status: 402 });
       }

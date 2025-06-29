@@ -138,10 +138,7 @@ export default function Generate() {
     try {
       if (
         currentOrganization &&
-        !(await checkLimit(
-          currentOrganization.plan as any,
-          currentOrganization.$id,
-        ))
+        !(await checkLimit(currentOrganization.$id, currentOrganization.plan as any))
       ) {
         setLimitReached(true);
         setIsGenerating(false);

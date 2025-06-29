@@ -9,6 +9,19 @@ export const planLimits: Record<Plan, number> = {
   enterprise: Infinity as unknown as number,
 };
 
+export async function getPlan(orgId: string): Promise<Plan> {
+  try {
+    const doc = await databases.getDocument(
+      databaseId,
+      COLLECTIONS.ORGANIZATIONS,
+      orgId,
+    );
+    return (doc.plan as Plan) || "starter";
+  } catch (e) {
+    return "starter";
+  }
+}
+
 interface UsageDoc {
   $id: string;
   organizationId: string;
@@ -45,9 +58,11 @@ export async function incrementUsage(orgId: string) {
   }
 }
 
-export async function checkLimit(plan: Plan, orgId: string) {
-  const limit = planLimits[plan];
+export async function checkLimit(orgId: string, plan?: Plan) {
+  const effectivePlan = plan || (await getPlan(orgId));
+  const limit = planLimits[effectivePlan];
   if (!isFinite(limit)) return true;
   const usage = await getUsage(orgId);
   return (usage?.count || 0) < limit;
 }
+

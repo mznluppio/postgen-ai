@@ -125,6 +125,17 @@ npm run dev
    - `month` (string, format YYYY-MM)
    - `count` (number)
 
+## 🚦 SaaS Flow
+
+Chaque organisation possède un champ `plan` dans la collection `organizations`.
+Le plan détermine la limite mensuelle de génération de contenu, stockée dans la
+collection `usage`. Lors de la génération, l'API vérifie la limite via
+`checkLimit` qui récupère automatiquement le plan de l'organisation.
+Si la limite est atteinte, l'utilisateur est invité à passer à un plan
+supérieur depuis la page **Facturation**. L'amélioration du plan déclenche un
+checkout Stripe puis met à jour le champ `plan` de l'organisation lorsque le
+paiement réussit.
+
 ## 🎯 Roadmap
 
 ### Phase 1 - MVP ✅

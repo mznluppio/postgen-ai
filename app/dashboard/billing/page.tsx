@@ -1,15 +1,17 @@
 "use client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { getUsage, planLimits } from "@/lib/saas";
+import { authService } from "@/lib/auth";
 
 export default function BillingPage() {
   const { currentOrganization } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [usage, setUsage] = useState<number>(0);
 
   useEffect(() => {
@@ -21,6 +23,18 @@ export default function BillingPage() {
     loadUsage();
   }, [currentOrganization]);
 
+  useEffect(() => {
+    const success = searchParams.get("success");
+    const newPlan = searchParams.get("plan") as "pro" | "enterprise" | null;
+    const orgId = searchParams.get("orgId");
+    if (success === "1" && newPlan && orgId && currentOrganization) {
+      if (orgId === currentOrganization.$id) {
+        authService.updateOrganization(orgId, { plan: newPlan });
+        router.replace("/dashboard/billing");
+      }
+    }
+  }, [searchParams, currentOrganization, router]);
+
   if (!currentOrganization) return null;
 
   const plan = currentOrganization.plan as keyof typeof planLimits;
@@ -30,7 +44,7 @@ export default function BillingPage() {
     const res = await fetch("/api/stripe/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ plan: targetPlan }),
+      body: JSON.stringify({ plan: targetPlan, orgId: currentOrganization.$id }),
     });
     if (res.ok) {
       const data = await res.json();
