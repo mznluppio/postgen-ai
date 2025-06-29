@@ -7,20 +7,68 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card";
+import { AnimataCard } from "@/components/ui/animata-card";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { AcertenityButton } from "@/components/ui/acertenity-button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/AuthContext";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import AuthPage from "@/app/auth/page";
+import { authService } from "@/lib/auth";
 
 export default function Team() {
   const { currentOrganization } = useAuth();
-  const [members, setMembers] = useState([]);
+  const [members, setMembers] = useState<any[]>([]);
   const [inviteEmail, setInviteEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [inviteSuccess, setInviteSuccess] = useState(false);
+
+  useEffect(() => {
+    const fetchMembers = async () => {
+      if (!currentOrganization) return;
+      try {
+        const res = await authService.getOrganizationMembers(
+          currentOrganization.$id,
+        );
+        setMembers(res);
+      } catch (err) {
+        console.error("Erreur lors du chargement des membres:", err);
+      }
+    };
+
+    fetchMembers();
+  }, [currentOrganization]);
+
+  const handleInvite = async () => {
+    if (!inviteEmail || !currentOrganization) return;
+    setLoading(true);
+    setInviteSuccess(false);
+    try {
+      await authService.inviteMemberByEmail(currentOrganization.$id, inviteEmail);
+      const updated = await authService.getOrganizationMembers(currentOrganization.$id);
+      setMembers(updated);
+      setInviteEmail("");
+      setInviteSuccess(true);
+    } catch (err) {
+      console.error("Erreur lors de l'invitation:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemove = async (memberId: string) => {
+    if (!currentOrganization) return;
+    try {
+      await authService.removeMemberFromOrganization(
+        currentOrganization.$id,
+        memberId,
+      );
+      setMembers((prev) => prev.filter((m) => m.$id !== memberId));
+    } catch (err) {
+      console.error("Erreur lors de la suppression:", err);
+    }
+  };
 
   if (!currentOrganization) {
     return (
@@ -44,9 +92,8 @@ export default function Team() {
       <h1 className="text-2xl font-bold">Équipe de l'organisation</h1>
       <Separator />
 
-      <Card>
+      <AnimataCard title="Membres actuels">
         <CardHeader>
-          <CardTitle>Membres actuels</CardTitle>
           <CardDescription>
             Liste des membres de l'organisation.
           </CardDescription>
@@ -64,19 +111,22 @@ export default function Team() {
                   className="flex justify-between items-center"
                 >
                   <span>{member.email}</span>
-                  <span className="text-sm text-muted-foreground">
-                    {member.role}
-                  </span>
+                  <AcertenityButton
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => handleRemove(member.$id)}
+                  >
+                    Retirer
+                  </AcertenityButton>
                 </li>
               ))}
             </ul>
           )}
         </CardContent>
-      </Card>
+      </AnimataCard>
 
-      <Card>
+      <AnimataCard title="Inviter un membre">
         <CardHeader>
-          <CardTitle>Inviter un membre</CardTitle>
           <CardDescription>
             Entrez l'adresse e-mail de la personne à inviter.
           </CardDescription>
@@ -92,16 +142,16 @@ export default function Team() {
               placeholder="exemple@domaine.com"
             />
           </div>
-          <Button disabled={loading || !inviteEmail}>
+          <AcertenityButton onClick={handleInvite} disabled={loading || !inviteEmail}>
             {loading ? "Invitation en cours..." : "Inviter"}
-          </Button>
+          </AcertenityButton>
           {inviteSuccess && (
             <p className="text-sm text-green-600">
               Invitation envoyée avec succès.
             </p>
           )}
         </CardContent>
-      </Card>
+      </AnimataCard>
     </div>
   );
 }

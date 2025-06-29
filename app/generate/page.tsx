@@ -32,6 +32,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Search } from "lucide-react";
+import { authService } from "@/lib/auth";
 
 interface BrandingData {
   topic: string;
@@ -146,7 +147,30 @@ export default function Generate() {
         
         // Save content to database if user is authenticated
         if (user && currentOrganization) {
-          // TODO: Save to database using authService.saveContent
+          try {
+            await Promise.all([
+              authService.saveContent({
+                organizationId: currentOrganization.$id,
+                topic,
+                content: content.linkedinPost,
+                type: "social",
+              }),
+              authService.saveContent({
+                organizationId: currentOrganization.$id,
+                topic,
+                content: content.instagramPost,
+                type: "social",
+              }),
+              authService.saveContent({
+                organizationId: currentOrganization.$id,
+                topic,
+                content: JSON.stringify(content.carousel),
+                type: "carousel",
+              }),
+            ]);
+          } catch (e) {
+            console.error("Erreur lors de la sauvegarde du contenu:", e);
+          }
         }
       } else {
         throw new Error("Erreur lors de la génération");

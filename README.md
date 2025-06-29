@@ -21,7 +21,8 @@ Postgen AI est une plateforme SaaS qui transforme une simple idée ou un sujet e
 ## 🛠️ Technologies
 
 - **Frontend** : Next.js 15, React 19, TypeScript
-- **UI** : Tailwind CSS, shadcn/ui, Framer Motion
+ - **UI** : Tailwind CSS, shadcn/ui, Framer Motion
+ - **Composants supplémentaires** : acertenityUI, animata.design
 - **Backend** : Appwrite (BaaS)
 - **IA** : API Copilot locale
 - **Images** : Pexels API
@@ -38,6 +39,13 @@ cd postgen-ai
 ```bash
 npm install
 ```
+
+   Ce projet utilise également des composants issus des bibliothèques
+   **acertenityUI** et **animata.design** pour améliorer l'interface.
+   Vous pouvez les installer avec :
+   ```bash
+   npm install acertenityui animata.design
+   ```
 
 3. **Configuration Appwrite**
    - Créer un projet sur [Appwrite Cloud](https://cloud.appwrite.io)

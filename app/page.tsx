@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import AuthPage from "./auth/page";
 import { Loader2 } from "lucide-react";
+import { AcertenityButton } from "@/components/ui/acertenity-button";
 
 export default function Home() {
   const { user, loading } = useAuth();
@@ -31,7 +32,10 @@ export default function Home() {
   return (
     <AuthGuard fallback={<AuthPage />}>
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin" />
+        <AcertenityButton disabled>
+          <Loader2 className="w-4 h-4 animate-spin" />
+          Chargement...
+        </AcertenityButton>
       </div>
     </AuthGuard>
   );

@@ -9,6 +9,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { AnimataCard } from "@/components/ui/animata-card";
+import { AcertenityButton } from "@/components/ui/acertenity-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -142,19 +144,18 @@ export default function OrganizationSettingsPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <AnimataCard title="Gérer les membres">
         <CardHeader>
-          <CardTitle>Gérer les membres</CardTitle>
           <CardDescription>
             Invitez ou supprimez des membres de l'organisation.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground text-sm">
-            (Fonctionnalité à venir)
-          </p>
+          <AcertenityButton asChild>
+            <a href="/dashboard/settings/team">Gérer l'équipe</a>
+          </AcertenityButton>
         </CardContent>
-      </Card>
+      </AnimataCard>
     </div>
   );
 }
