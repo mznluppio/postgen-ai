@@ -254,6 +254,86 @@ export class AuthService {
       throw error;
     }
   }
+
+  // Account settings
+  async updateAccountName(newName: string) {
+    try {
+      await account.updateName(newName);
+      const user = await this.getCurrentUser();
+      if (user) {
+        await this.updateUserProfile(user.$id, { name: newName });
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async updatePassword(newPassword: string) {
+    try {
+      await account.updatePassword(newPassword);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Team management
+  async getOrganizationMembers(orgId: string) {
+    try {
+      const res = await databases.listDocuments(
+        databaseId,
+        COLLECTIONS.USERS,
+        [Query.contains("organizations", orgId)]
+      );
+      return res.documents as User[];
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async inviteMemberByEmail(orgId: string, email: string) {
+    try {
+      const users = await databases.listDocuments(
+        databaseId,
+        COLLECTIONS.USERS,
+        [Query.equal("email", email)]
+      );
+      if (!users.documents.length) {
+        throw new Error("Utilisateur introuvable");
+      }
+      const userDoc = users.documents[0] as User & { organizations: string[] };
+
+      await this.updateUserProfile(userDoc.$id, {
+        organizations: Array.from(new Set([...(userDoc.organizations || []), orgId])),
+      });
+
+      const org = await this.getOrganization(orgId);
+      await this.updateOrganization(orgId, {
+        members: Array.from(new Set([...(org.members || []), userDoc.$id])),
+      });
+
+      return userDoc;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async removeMemberFromOrganization(orgId: string, userId: string) {
+    try {
+      const user = await this.getUserProfile(userId);
+      if (user) {
+        await this.updateUserProfile(userId, {
+          organizations: (user.organizations || []).filter((id: string) => id !== orgId),
+        });
+      }
+
+      const org = await this.getOrganization(orgId);
+      await this.updateOrganization(orgId, {
+        members: (org.members || []).filter((id: string) => id !== userId),
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
 }
 
 export const authService = new AuthService();

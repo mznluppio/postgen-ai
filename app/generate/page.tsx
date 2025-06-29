@@ -32,6 +32,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Search } from "lucide-react";
+import { authService } from "@/lib/auth";
+import { checkLimit, incrementUsage } from "@/lib/saas";
 
 interface BrandingData {
   topic: string;
@@ -107,6 +109,7 @@ export default function Generate() {
   const [activeTab, setActiveTab] = useState("posts");
   const [isVisible, setIsVisible] = useState(false);
   const [currentSuggestion, setCurrentSuggestion] = useState(0);
+  const [limitReached, setLimitReached] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -119,9 +122,10 @@ export default function Generate() {
 
   const generateContent = async () => {
     if (!topic.trim()) return;
-    
+
     setIsGenerating(true);
     setGeneratedContent(null);
+    setLimitReached(false);
 
     const brandingData: BrandingData = {
       topic,
@@ -132,12 +136,20 @@ export default function Generate() {
     };
 
     try {
+      if (
+        currentOrganization &&
+        !(await checkLimit(currentOrganization.$id, currentOrganization.plan as any))
+      ) {
+        setLimitReached(true);
+        setIsGenerating(false);
+        return;
+      }
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(brandingData),
+        body: JSON.stringify({ ...brandingData, organizationId: currentOrganization?.$id }),
       });
 
       if (response.ok) {
@@ -146,7 +158,31 @@ export default function Generate() {
         
         // Save content to database if user is authenticated
         if (user && currentOrganization) {
-          // TODO: Save to database using authService.saveContent
+          try {
+          await Promise.all([
+            authService.saveContent({
+              organizationId: currentOrganization.$id,
+              topic,
+              content: content.linkedinPost,
+              type: "social",
+            }),
+            authService.saveContent({
+              organizationId: currentOrganization.$id,
+              topic,
+              content: content.instagramPost,
+              type: "social",
+            }),
+            authService.saveContent({
+              organizationId: currentOrganization.$id,
+              topic,
+              content: JSON.stringify(content.carousel),
+              type: "carousel",
+            }),
+          ]);
+          await incrementUsage(currentOrganization.$id);
+          } catch (e) {
+            console.error("Erreur lors de la sauvegarde du contenu:", e);
+          }
         }
       } else {
         throw new Error("Erreur lors de la génération");
@@ -221,6 +257,11 @@ export default function Generate() {
                   {currentOrganization.name}
                 </span>
               </div>
+            )}
+            {limitReached && (
+              <p className="text-red-500 text-center mb-4">
+                Limite atteinte pour votre plan actuel. Veuillez mettre à niveau votre abonnement.
+              </p>
             )}
 
             {/* Generation Form */}

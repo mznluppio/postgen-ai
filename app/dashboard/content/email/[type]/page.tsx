@@ -18,7 +18,7 @@ import { databases } from "@/lib/appwrite-config";
 import { Query } from "appwrite";
 import { motion } from "framer-motion";
 
-export default function SocialProjectSelectorPage() {
+export default function EmailProjectSelectorPage() {
   const { currentOrganization } = useAuth();
   const { type } = useParams();
   const [projects, setProjects] = useState<any[]>([]);
@@ -94,7 +94,7 @@ export default function SocialProjectSelectorPage() {
               <CardFooter>
                 <Button asChild className="w-full">
                   <Link
-                    href={`/dashboard/content/articles/${type}/${project.$id}`}
+                    href={`/dashboard/content/email/${type}/${project.$id}`}
                   >
                     <Plus className="mr-2 h-4 w-4" />
                     Créer du contenu

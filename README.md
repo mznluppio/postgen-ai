@@ -21,7 +21,7 @@ Postgen AI est une plateforme SaaS qui transforme une simple idée ou un sujet e
 ## 🛠️ Technologies
 
 - **Frontend** : Next.js 15, React 19, TypeScript
-- **UI** : Tailwind CSS, shadcn/ui, Framer Motion
+ - **UI** : Tailwind CSS, shadcn/ui, Framer Motion
 - **Backend** : Appwrite (BaaS)
 - **IA** : API Copilot locale
 - **Images** : Pexels API
@@ -39,6 +39,7 @@ cd postgen-ai
 npm install
 ```
 
+
 3. **Configuration Appwrite**
    - Créer un projet sur [Appwrite Cloud](https://cloud.appwrite.io)
    - Créer une base de données
@@ -47,12 +48,20 @@ npm install
      - `organizations` (organisations)
      - `projects` (projets)
      - `content` (contenus générés)
+    - `usage` (suivi de consommation)
 
 4. **Variables d'environnement**
 ```bash
 cp .env.example .env.local
 ```
 Remplir les variables avec vos clés Appwrite et Pexels.
+
+Ajouter également les clés Stripe :
+```
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_PRICE_PRO=price_pro_id
+STRIPE_PRICE_ENTERPRISE=price_enterprise_id
+```
 
 5. **Lancer le projet**
 ```bash
@@ -111,6 +120,21 @@ npm run dev
    - `type` (enum: social, article, email, carousel)
    - `createdBy` (string)
    - `createdAt` (datetime)
+5. **usage**
+   - `organizationId` (string)
+   - `month` (string, format YYYY-MM)
+   - `count` (number)
+
+## 🚦 SaaS Flow
+
+Chaque organisation possède un champ `plan` dans la collection `organizations`.
+Le plan détermine la limite mensuelle de génération de contenu, stockée dans la
+collection `usage`. Lors de la génération, l'API vérifie la limite via
+`checkLimit` qui récupère automatiquement le plan de l'organisation.
+Si la limite est atteinte, l'utilisateur est invité à passer à un plan
+supérieur depuis la page **Facturation**. L'amélioration du plan déclenche un
+checkout Stripe puis met à jour le champ `plan` de l'organisation lorsque le
+paiement réussit.
 
 ## 🎯 Roadmap
 
@@ -129,9 +153,9 @@ npm run dev
 - [ ] Analytics de performance
 
 ### Phase 3 - Monétisation
-- [ ] Plans d'abonnement
-- [ ] Paiements Stripe
-- [ ] Limites d'usage
+- [x] Plans d'abonnement
+- [x] Paiements Stripe
+- [x] Limites d'usage
 - [ ] Fonctionnalités premium
 
 ## 🤝 Contribution
