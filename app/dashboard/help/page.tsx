@@ -1,11 +1,10 @@
 "use client";
 import { useState } from "react";
 import { Separator } from "@/components/ui/separator";
-import { AnimataCard } from "@/components/ui/animata-card";
-import { AcertenityButton } from "@/components/ui/acertenity-button";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 export default function HelpPage() {
   const [email, setEmail] = useState("");
@@ -26,7 +25,7 @@ export default function HelpPage() {
     <div className="p-6 space-y-4">
       <h1 className="text-2xl font-bold">Aide & Support</h1>
       <Separator />
-      <AnimataCard className="max-w-md">
+      <Card className="max-w-md">
         <CardHeader>
           <CardTitle>Contactez-nous</CardTitle>
         </CardHeader>
@@ -42,11 +41,11 @@ export default function HelpPage() {
             onChange={(e) => setMessage(e.target.value)}
           />
           {sent && <p className="text-sm text-green-600">Message envoy\u00e9 !</p>}
-          <AcertenityButton onClick={handleSend} disabled={!email || !message}>
+          <Button onClick={handleSend} disabled={!email || !message}>
             Envoyer
-          </AcertenityButton>
+          </Button>
         </CardContent>
-      </AnimataCard>
+      </Card>
     </div>
   );
 }

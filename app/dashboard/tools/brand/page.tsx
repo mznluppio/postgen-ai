@@ -2,10 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { Separator } from "@/components/ui/separator";
-import { CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { AnimataCard } from "@/components/ui/animata-card";
-import { AcertenityButton } from "@/components/ui/acertenity-button";
+import { Button } from "@/components/ui/button";
 
 export default function Page() {
   const [name, setName] = useState("");
@@ -33,7 +32,7 @@ export default function Page() {
     <div className="p-6 space-y-4">
       <h1 className="text-2xl font-bold">Brand Guidelines</h1>
       <Separator />
-      <AnimataCard className="space-y-4 p-4">
+      <Card className="space-y-4 p-4">
         <CardHeader>
           <CardTitle>Identité de marque</CardTitle>
         </CardHeader>
@@ -57,9 +56,9 @@ export default function Page() {
               onChange={(e) => setColor(e.target.value)}
             />
           </div>
-          <AcertenityButton onClick={save}>Sauvegarder</AcertenityButton>
+          <Button onClick={save}>Sauvegarder</Button>
         </CardContent>
-      </AnimataCard>
+      </Card>
     </div>
   );
 }

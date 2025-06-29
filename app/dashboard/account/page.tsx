@@ -4,9 +4,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { authService } from "@/lib/auth";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AnimataCard } from "@/components/ui/animata-card";
-import { AcertenityButton } from "@/components/ui/acertenity-button";
-import { CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
 export default function AccountPage() {
@@ -44,7 +43,7 @@ export default function AccountPage() {
     <div className="p-6 space-y-4">
       <h1 className="text-2xl font-bold">Param\u00e8tres du compte</h1>
       <Separator />
-      <AnimataCard className="max-w-md">
+      <Card className="max-w-md">
         <CardHeader>
           <CardTitle>Informations</CardTitle>
         </CardHeader>
@@ -69,11 +68,11 @@ export default function AccountPage() {
             />
           </div>
           {message && <p className="text-sm text-muted-foreground">{message}</p>}
-          <AcertenityButton onClick={handleSave} disabled={loading}>
+          <Button onClick={handleSave} disabled={loading}>
             {loading ? "Enregistrement..." : "Enregistrer"}
-          </AcertenityButton>
+          </Button>
         </CardContent>
-      </AnimataCard>
+      </Card>
     </div>
   );
 }

@@ -1,9 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Separator } from "@/components/ui/separator";
-import { AnimataCard } from "@/components/ui/animata-card";
-import { AcertenityButton } from "@/components/ui/acertenity-button";
-import { CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 interface Notification {
   id: string;
@@ -42,18 +41,18 @@ export default function NotificationsPage() {
       ) : (
         <div className="grid gap-2">
           {items.map((n) => (
-            <AnimataCard key={n.id} className="p-3 flex items-center justify-between">
+            <Card key={n.id} className="p-3 flex items-center justify-between">
               <div className={n.read ? "text-muted-foreground" : ""}>{n.message}</div>
               {!n.read && (
-                <AcertenityButton size="sm" onClick={() => markRead(n.id)}>
+                <Button size="sm" onClick={() => markRead(n.id)}>
                   Marquer lu
-                </AcertenityButton>
+                </Button>
               )}
-            </AnimataCard>
+            </Card>
           ))}
-          <AcertenityButton onClick={clearAll} className="mt-2" variant="destructive">
+          <Button onClick={clearAll} className="mt-2" variant="destructive">
             Vider
-          </AcertenityButton>
+          </Button>
         </div>
       )}
     </div>

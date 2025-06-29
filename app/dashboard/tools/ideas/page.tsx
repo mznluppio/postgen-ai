@@ -2,10 +2,9 @@
 
 import { useState } from "react";
 import { Separator } from "@/components/ui/separator";
-import { CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { AnimataCard } from "@/components/ui/animata-card";
-import { AcertenityButton } from "@/components/ui/acertenity-button";
+import { Button } from "@/components/ui/button";
 
 const BASE_IDEAS = [
   "Top 10 astuces",
@@ -36,16 +35,16 @@ export default function Page() {
           value={topic}
           onChange={(e) => setTopic(e.target.value)}
         />
-        <AcertenityButton onClick={generate} disabled={!topic.trim()}>Générer</AcertenityButton>
+        <Button onClick={generate} disabled={!topic.trim()}>Générer</Button>
       </div>
       {ideas.length > 0 && (
         <div className="grid gap-4">
           {ideas.map((idea) => (
-            <AnimataCard key={idea}>
+            <Card key={idea}>
               <CardHeader>
                 <CardTitle>{idea}</CardTitle>
               </CardHeader>
-            </AnimataCard>
+            </Card>
           ))}
         </div>
       )}

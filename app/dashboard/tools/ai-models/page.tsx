@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import { Separator } from "@/components/ui/separator";
-import { CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { AnimataCard } from "@/components/ui/animata-card";
-import { AcertenityButton } from "@/components/ui/acertenity-button";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 const MODELS = ["Copilot Light", "Copilot Pro", "Copilot Vision"];
 
@@ -17,7 +16,7 @@ export default function Page() {
       <Separator />
       <div className="grid gap-4 sm:grid-cols-2">
         {MODELS.map((model) => (
-          <AnimataCard
+          <Card
             key={model}
             className={selected === model ? "border-purple-500" : ""}
             onClick={() => setSelected(model)}
@@ -30,13 +29,13 @@ export default function Page() {
                 ? "Modèle sélectionné"
                 : "Cliquer pour sélectionner"}
             </CardContent>
-          </AnimataCard>
+          </Card>
         ))}
       </div>
       {selected && (
-        <AcertenityButton className="mt-4" disabled>
+        <Button className="mt-4" disabled>
           {selected}
-        </AcertenityButton>
+        </Button>
       )}
     </div>
   );

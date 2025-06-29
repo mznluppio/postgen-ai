@@ -11,8 +11,7 @@ import {
   CardTitle,
   CardContent,
 } from "@/components/ui/card";
-import { AnimataCard } from "@/components/ui/animata-card";
-import { AcertenityButton } from "@/components/ui/acertenity-button";
+import { Button } from "@/components/ui/button";
 
 interface ContentItem {
   $id: string;
@@ -61,7 +60,7 @@ export default function Page() {
       ) : (
         <div className="grid gap-4">
           {Object.entries(items).map(([date, docs]) => (
-            <AnimataCard key={date} className="space-y-2">
+            <Card key={date} className="space-y-2">
               <CardHeader>
                 <CardTitle>{new Date(date).toLocaleDateString()}</CardTitle>
               </CardHeader>
@@ -72,13 +71,13 @@ export default function Page() {
                   </p>
                 ))}
               </CardContent>
-            </AnimataCard>
+            </Card>
           ))}
         </div>
       )}
-      <AcertenityButton onClick={loadItems} disabled={!currentOrganization || loading} className="mt-4">
+      <Button onClick={loadItems} disabled={!currentOrganization || loading} className="mt-4">
         {loading ? "Chargement..." : "Actualiser"}
-      </AcertenityButton>
+      </Button>
     </div>
   );
 }

@@ -4,10 +4,9 @@ import { useEffect, useState } from "react";
 import { databases } from "@/lib/appwrite-config";
 import { Query } from "appwrite";
 import { useAuth } from "@/contexts/AuthContext";
-import { AnimataCard } from "@/components/ui/animata-card";
-import { AcertenityButton } from "@/components/ui/acertenity-button";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 export default function AnalyticsPage() {
   const { currentOrganization } = useAuth();
@@ -41,30 +40,30 @@ export default function AnalyticsPage() {
       <h1 className="text-2xl font-bold">Analytics</h1>
       <Separator />
       <div className="grid gap-4 sm:grid-cols-2">
-        <AnimataCard>
+        <Card>
           <CardHeader>
             <CardTitle>Contenus créés</CardTitle>
           </CardHeader>
           <CardContent className="text-3xl font-bold">
             {contentCount}
           </CardContent>
-        </AnimataCard>
-        <AnimataCard>
+        </Card>
+        <Card>
           <CardHeader>
             <CardTitle>Projets</CardTitle>
           </CardHeader>
           <CardContent className="text-3xl font-bold">
             {projectCount}
           </CardContent>
-        </AnimataCard>
+        </Card>
       </div>
-      <AcertenityButton
+      <Button
         className="mt-4"
         disabled={!currentOrganization}
         onClick={loadStats}
       >
         Rafraîchir
-      </AcertenityButton>
+      </Button>
     </div>
   );
 }

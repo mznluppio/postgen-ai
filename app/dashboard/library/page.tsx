@@ -5,9 +5,8 @@ import { databases } from "@/lib/appwrite-config";
 import { Query } from "appwrite";
 import { useAuth } from "@/contexts/AuthContext";
 import { Separator } from "@/components/ui/separator";
-import { CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { AnimataCard } from "@/components/ui/animata-card";
-import { AcertenityButton } from "@/components/ui/acertenity-button";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 export default function LibraryPage() {
   const { currentOrganization } = useAuth();
@@ -33,22 +32,22 @@ export default function LibraryPage() {
       <Separator />
       <div className="grid gap-4">
         {contents.map((item) => (
-          <AnimataCard key={item.$id}>
+          <Card key={item.$id}>
             <CardHeader>
               <CardTitle className="text-base">{item.topic}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm whitespace-pre-wrap">{item.content}</p>
             </CardContent>
-          </AnimataCard>
+          </Card>
         ))}
         {contents.length === 0 && (
           <p className="text-muted-foreground text-sm">Aucun contenu enregistré.</p>
         )}
       </div>
-      <AcertenityButton className="mt-4" onClick={loadContents} disabled={!currentOrganization}>
+      <Button className="mt-4" onClick={loadContents} disabled={!currentOrganization}>
         Actualiser
-      </AcertenityButton>
+      </Button>
     </div>
   );
 }

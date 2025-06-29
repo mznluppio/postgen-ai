@@ -2,10 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { Separator } from "@/components/ui/separator";
-import { CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { AnimataCard } from "@/components/ui/animata-card";
-import { AcertenityButton } from "@/components/ui/acertenity-button";
+import { Button } from "@/components/ui/button";
 
 interface Audience {
   id: string;
@@ -40,16 +39,16 @@ export default function Page() {
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
-        <AcertenityButton onClick={addAudience} disabled={!name.trim()}>Ajouter</AcertenityButton>
+        <Button onClick={addAudience} disabled={!name.trim()}>Ajouter</Button>
       </div>
       {audiences.length > 0 && (
         <div className="grid gap-2">
           {audiences.map((aud) => (
-            <AnimataCard key={aud.id} className="p-3">
+            <Card key={aud.id} className="p-3">
               <CardHeader>
                 <CardTitle className="text-base">{aud.name}</CardTitle>
               </CardHeader>
-            </AnimataCard>
+            </Card>
           ))}
         </div>
       )}
