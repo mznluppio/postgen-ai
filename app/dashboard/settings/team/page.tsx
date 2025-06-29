@@ -7,9 +7,8 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card";
-import { AnimataCard } from "@/components/ui/animata-card";
 import { Input } from "@/components/ui/input";
-import { AcertenityButton } from "@/components/ui/acertenity-button";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/AuthContext";
@@ -92,8 +91,9 @@ export default function Team() {
       <h1 className="text-2xl font-bold">Équipe de l'organisation</h1>
       <Separator />
 
-      <AnimataCard title="Membres actuels">
+      <Card>
         <CardHeader>
+          <CardTitle>Membres actuels</CardTitle>
           <CardDescription>
             Liste des membres de l'organisation.
           </CardDescription>
@@ -111,22 +111,23 @@ export default function Team() {
                   className="flex justify-between items-center"
                 >
                   <span>{member.email}</span>
-                  <AcertenityButton
+                  <Button
                     size="sm"
                     variant="destructive"
                     onClick={() => handleRemove(member.$id)}
                   >
                     Retirer
-                  </AcertenityButton>
+                  </Button>
                 </li>
               ))}
             </ul>
           )}
         </CardContent>
-      </AnimataCard>
+      </Card>
 
-      <AnimataCard title="Inviter un membre">
+      <Card>
         <CardHeader>
+          <CardTitle>Inviter un membre</CardTitle>
           <CardDescription>
             Entrez l'adresse e-mail de la personne à inviter.
           </CardDescription>
@@ -142,16 +143,16 @@ export default function Team() {
               placeholder="exemple@domaine.com"
             />
           </div>
-          <AcertenityButton onClick={handleInvite} disabled={loading || !inviteEmail}>
+          <Button onClick={handleInvite} disabled={loading || !inviteEmail}>
             {loading ? "Invitation en cours..." : "Inviter"}
-          </AcertenityButton>
+          </Button>
           {inviteSuccess && (
             <p className="text-sm text-green-600">
               Invitation envoyée avec succès.
             </p>
           )}
         </CardContent>
-      </AnimataCard>
+      </Card>
     </div>
   );
 }
