@@ -20,6 +20,14 @@ import {
   TableRow,
   TableCell,
 } from "@/components/ui/table";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+} from "recharts";
 
 export default function AnalyticsPage() {
   const { currentOrganization } = useAuth();
@@ -111,9 +119,18 @@ export default function AnalyticsPage() {
         </Card>
       </div>
 
+
       {projectStats.length > 0 && (
         <div className="space-y-2">
           <h2 className="text-xl font-semibold">Contenu par projet</h2>
+          <ResponsiveContainer width="100%" height={250}>
+            <BarChart data={projectStats} margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
+              <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
+              <YAxis allowDecimals={false} fontSize={12} tickLine={false} axisLine={false} />
+              <Tooltip />
+              <Bar dataKey="count" fill="hsl(var(--chart-2))" radius={[4,4,0,0]} />
+            </BarChart>
+          </ResponsiveContainer>
           <Table>
             <TableHeader>
               <TableRow>
@@ -136,6 +153,14 @@ export default function AnalyticsPage() {
       {Object.keys(typeStats).length > 0 && (
         <div className="space-y-2">
           <h2 className="text-xl font-semibold">Contenu par type</h2>
+          <ResponsiveContainer width="100%" height={250}>
+            <BarChart data={Object.entries(typeStats).map(([name, count]) => ({ name, count }))} margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
+              <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
+              <YAxis allowDecimals={false} fontSize={12} tickLine={false} axisLine={false} />
+              <Tooltip />
+              <Bar dataKey="count" fill="hsl(var(--chart-3))" radius={[4,4,0,0]} />
+            </BarChart>
+          </ResponsiveContainer>
           <Table>
             <TableHeader>
               <TableRow>
