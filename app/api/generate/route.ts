@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { authService } from "@/lib/auth";
+import { checkLimit, incrementUsage, Plan } from "@/lib/saas";
 export const dynamic = "force-dynamic";
 
 interface BrandingData {
@@ -34,8 +36,18 @@ const tonePrompts = {
 
 export async function POST(request: NextRequest) {
   try {
-    const brandingData: BrandingData = await request.json();
+    const body = await request.json();
+    const brandingData: BrandingData = body;
     const { topic, tone, primaryColor, secondaryColor } = brandingData;
+    const organizationId = body.organizationId as string | undefined;
+
+    if (organizationId) {
+      const org = await authService.getOrganization(organizationId);
+      const allowed = await checkLimit(org.plan as Plan, organizationId);
+      if (!allowed) {
+        return NextResponse.json({ error: "limit reached" }, { status: 402 });
+      }
+    }
 
     const toneInstruction =
       tonePrompts[tone as keyof typeof tonePrompts] || tonePrompts.professional;
@@ -114,6 +126,10 @@ NE FOURNIS QUE DU TEXTE : pas d'introduction ni de conclusion, structure uniquem
     );
 
     console.log(answer);
+
+    if (organizationId) {
+      await incrementUsage(organizationId);
+    }
 
     return NextResponse.json({
       linkedinPost: linkedinPost.trim(),

@@ -48,12 +48,20 @@ npm install
      - `organizations` (organisations)
      - `projects` (projets)
      - `content` (contenus générés)
+    - `usage` (suivi de consommation)
 
 4. **Variables d'environnement**
 ```bash
 cp .env.example .env.local
 ```
 Remplir les variables avec vos clés Appwrite et Pexels.
+
+Ajouter également les clés Stripe :
+```
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_PRICE_PRO=price_pro_id
+STRIPE_PRICE_ENTERPRISE=price_enterprise_id
+```
 
 5. **Lancer le projet**
 ```bash
@@ -112,6 +120,10 @@ npm run dev
    - `type` (enum: social, article, email, carousel)
    - `createdBy` (string)
    - `createdAt` (datetime)
+5. **usage**
+   - `organizationId` (string)
+   - `month` (string, format YYYY-MM)
+   - `count` (number)
 
 ## 🎯 Roadmap
 
@@ -130,9 +142,9 @@ npm run dev
 - [ ] Analytics de performance
 
 ### Phase 3 - Monétisation
-- [ ] Plans d'abonnement
-- [ ] Paiements Stripe
-- [ ] Limites d'usage
+- [x] Plans d'abonnement
+- [x] Paiements Stripe
+- [x] Limites d'usage
 - [ ] Fonctionnalités premium
 
 ## 🤝 Contribution
