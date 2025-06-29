@@ -98,6 +98,9 @@ export default function ContentGenerator({
     const emailTypes = ["email", "newsletter"];
     const isEmail = emailTypes.includes(typeLower);
 
+    // Prospection (messages privés)
+    const isProspect = typeLower.includes("prospect");
+
     // Types d'articles
     const articleTypes = ["article", "blog", "publication"];
     const isArticle = articleTypes.includes(typeLower);
@@ -123,6 +126,16 @@ ${description || "Pas de contexte spécifique fourni."}
 - Optimise pour ${type === "linkedin" ? "un public professionnel" : "l'engagement et la viralité"}
 - Longueur optimale pour la plateforme
 - Pas de balises Markdown, texte brut uniquement
+
+`;
+    } else if (isProspect) {
+      const channel = typeLower.replace("prospect-", "");
+      prompt += `Instructions pour message de prospection ${channel} :
+- Message court et personnalisé
+- Présente la proposition de valeur du projet
+- Termine par un appel à l'action clair
+- Ton professionnel et engageant
+- Pas de hashtags ni de Markdown
 
 `;
     } else if (isEmail) {
