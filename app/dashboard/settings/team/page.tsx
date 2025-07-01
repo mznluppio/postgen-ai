@@ -8,7 +8,8 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { AceternityButton } from "@/components/ui/aceternity-button";
+import { AnimataCard } from "@/components/ui/animata-card";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/AuthContext";
@@ -91,7 +92,7 @@ export default function Team() {
       <h1 className="text-2xl font-bold">Équipe de l'organisation</h1>
       <Separator />
 
-      <Card>
+      <AnimataCard>
         <CardHeader>
           <CardTitle>Membres actuels</CardTitle>
           <CardDescription>
@@ -111,21 +112,20 @@ export default function Team() {
                   className="flex justify-between items-center"
                 >
                   <span>{member.email}</span>
-                  <Button
-                    size="sm"
-                    variant="destructive"
+                  <AceternityButton
+                    className="bg-red-600 hover:bg-red-700 px-3 py-1 text-sm"
                     onClick={() => handleRemove(member.$id)}
                   >
                     Retirer
-                  </Button>
+                  </AceternityButton>
                 </li>
               ))}
             </ul>
           )}
         </CardContent>
-      </Card>
+      </AnimataCard>
 
-      <Card>
+      <AnimataCard>
         <CardHeader>
           <CardTitle>Inviter un membre</CardTitle>
           <CardDescription>
@@ -143,16 +143,20 @@ export default function Team() {
               placeholder="exemple@domaine.com"
             />
           </div>
-          <Button onClick={handleInvite} disabled={loading || !inviteEmail}>
+          <AceternityButton
+            onClick={handleInvite}
+            disabled={loading || !inviteEmail}
+            className="px-3 py-1"
+          >
             {loading ? "Invitation en cours..." : "Inviter"}
-          </Button>
+          </AceternityButton>
           {inviteSuccess && (
             <p className="text-sm text-green-600">
               Invitation envoyée avec succès.
             </p>
           )}
         </CardContent>
-      </Card>
+      </AnimataCard>
     </div>
   );
 }

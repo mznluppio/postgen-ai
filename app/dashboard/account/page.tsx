@@ -1,133 +1,79 @@
 "use client";
-
-import { useAuth } from "@/contexts/AuthContext";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  CardDescription,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Input } from "@/components/ui/input";
-import { ID, Storage, Databases } from "appwrite";
 import { useState } from "react";
-import { client } from "@/lib/appwrite-config";
-import { getAvatarUrl } from "@/lib/get-avatar-url";
+import { useAuth } from "@/contexts/AuthContext";
+import { authService } from "@/lib/auth";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { AnimataCard } from "@/components/ui/animata-card";
+import { AceternityButton } from "@/components/ui/aceternity-button";
+import { Separator } from "@/components/ui/separator";
 
-const storage = new Storage(client);
-const databases = new Databases(client);
-
-export default function ProfilePage() {
-  const { user, currentOrganization, refreshUser } = useAuth();
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+export default function AccountPage() {
+  const { user, refreshUser } = useAuth();
+  const [name, setName] = useState(user?.name || "");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
 
-  if (!user) {
-    return (
-      <div className="flex items-center justify-center h-screen text-muted-foreground">
-        Chargement du profil...
-      </div>
-    );
-  }
-
-  const avatarUrl = getAvatarUrl(user.avatar);
-
-  const handleUpload = async () => {
-    if (!avatarFile) return;
+  const handleSave = async () => {
+    if (!user) return;
     setLoading(true);
-
+    setMessage("");
     try {
-      const uploaded = await storage.createFile(
-        process.env.NEXT_PUBLIC_APPWRITE_USERAVATARS_ID || "",
-        ID.unique(),
-        avatarFile,
-      );
-
-      await databases.updateDocument(
-        process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "",
-        process.env.NEXT_PUBLIC_APPWRITE_USERS_COLLECTION_ID || "",
-        user.$id,
-        {
-          avatar: uploaded.$id,
-        },
-      );
-
-      await refreshUser(); // recharge les données utilisateur
+      if (name && name !== user.name) {
+        await authService.updateAccountName(name);
+      }
+      if (password) {
+        await authService.updatePassword(password);
+      }
+      await refreshUser();
+      setPassword("");
+      setMessage("Mise \u00e0 jour effectu\u00e9e.");
     } catch (err) {
-      console.error("Erreur lors de l'upload de l'avatar :", err);
+      console.error(err);
+      setMessage("Erreur lors de la mise \u00e0 jour");
     } finally {
       setLoading(false);
     }
   };
 
+  if (!user) return null;
+
   return (
-    <div className="p-6">
-      <Card>
-        <CardHeader className="flex flex-col items-center gap-4">
-          {avatarUrl ? (
-            <img
-              src={avatarUrl}
-              alt="Avatar"
-              className="w-20 h-20 rounded-full object-cover"
-            />
-          ) : (
-            <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
-              {user.name?.charAt(0).toUpperCase()}
-            </div>
-          )}
-          <CardTitle>Profil utilisateur</CardTitle>
-          <CardDescription>
-            Informations associées à votre compte Appwrite
-          </CardDescription>
+    <div className="p-6 space-y-4">
+      <h1 className="text-2xl font-bold">Param\u00e8tres du compte</h1>
+      <Separator />
+      <AnimataCard className="max-w-md">
+        <CardHeader>
+          <CardTitle>Informations</CardTitle>
         </CardHeader>
-
         <CardContent className="space-y-4">
-          <div>
-            <p className="text-sm text-muted-foreground">Nom</p>
-            <p className="font-medium">{user.name}</p>
-          </div>
-
-          <Separator />
-
-          <div>
-            <p className="text-sm text-muted-foreground">Email</p>
-            <p className="font-medium">{user.email}</p>
-          </div>
-
-          <Separator />
-
-          <div>
-            <p className="text-sm text-muted-foreground">ID utilisateur</p>
-            <p className="font-mono text-xs break-all">{user.$id}</p>
-          </div>
-
-          <Separator />
-
-          <div>
-            <p className="text-sm text-muted-foreground">
-              Organisation actuelle
-            </p>
-            <p className="font-medium">
-              {currentOrganization ? currentOrganization.name : "Aucune"}
-            </p>
-          </div>
-
-          <Separator />
-
           <div className="space-y-2">
+            <Label htmlFor="name">Nom</Label>
             <Input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setAvatarFile(e.target.files?.[0] || null)}
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Nom complet"
             />
-            <Button onClick={handleUpload} disabled={loading || !avatarFile}>
-              {loading ? "Téléversement..." : "Mettre à jour l'avatar"}
-            </Button>
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">Nouveau mot de passe</Label>
+            <Input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="******"
+            />
+          </div>
+          {message && <p className="text-sm text-muted-foreground">{message}</p>}
+          <AceternityButton onClick={handleSave} disabled={loading}>
+            {loading ? "Enregistrement..." : "Enregistrer"}
+          </AceternityButton>
         </CardContent>
-      </Card>
+      </AnimataCard>
     </div>
   );
 }
