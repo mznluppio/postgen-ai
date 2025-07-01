@@ -61,8 +61,19 @@ Ajouter vos identifiants Canva pour l'intégration :
 ```
 CANVA_CLIENT_ID=your_canva_client_id
 CANVA_CLIENT_SECRET=your_canva_secret
-CANVA_REDIRECT_URI=http://localhost:3000/api/canva/callback
+CANVA_REDIRECT_URI=http://127.0.0.1:3000/api/canva/callback
 ```
+
+### Connexion à Canva
+
+L'authentification à Canva utilise le flux OAuth avec PKCE. La route
+`/api/canva/auth` génère automatiquement un `code_challenge` et conserve le
+`code_verifier` dans un cookie. Une fois l'utilisateur connecté et redirigé vers
+`/api/canva/callback`, ce dernier échange le code contre un jeton d'accès qui
+est stocké dans le cookie `canva_token`.
+
+Pensez à ajouter l'URL de redirection
+`http://127.0.0.1:3000/api/canva/callback` dans le tableau de bord Canva.
 
 Ajouter également les clés Stripe :
 ```

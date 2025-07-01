@@ -1,7 +1,13 @@
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { getCanvaAuthUrl } from "@/lib/canva";
+import { generateCanvaAuth } from "@/lib/canva";
 
 export async function GET() {
-  const url = getCanvaAuthUrl();
-  return NextResponse.redirect(url);
+  const { url, verifier } = generateCanvaAuth();
+  const res = NextResponse.redirect(url);
+  cookies().set("canva_verifier", verifier, {
+    httpOnly: true,
+    path: "/",
+  });
+  return res;
 }
