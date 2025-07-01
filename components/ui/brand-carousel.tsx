@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
-import { fetchPexelsImage } from "@/lib/fetchPexelsImage";
 import { createCanvaDesign } from "@/lib/canva";
 import html2canvas from "html2canvas";
 
@@ -72,25 +71,19 @@ export const BrandCarousel = ({
         .split("; ")
         .find((row) => row.startsWith("canva_token="));
       const token = tokenMatch ? tokenMatch.split("=")[1] : null;
-      for (let i = 0; i < slides.length; i++) {
-        const prompt = slides[i].imagePrompt;
-        let imageUrl: string | null = null;
-        if (token) {
+
+      if (token) {
+        for (let i = 0; i < slides.length; i++) {
           try {
             const res = await createCanvaDesign(token, {
               title: slides[i].title,
               content: slides[i].content,
             });
-            imageUrl = res.preview_url;
+            images[i] = res.preview_url;
             links[i] = res.edit_url;
           } catch (e) {
-            imageUrl = await fetchPexelsImage(prompt);
+            console.error("Canva design error", e);
           }
-        } else {
-          imageUrl = await fetchPexelsImage(prompt);
-        }
-        if (imageUrl) {
-          images[i] = imageUrl;
         }
       }
       setGeneratedImages(images);
