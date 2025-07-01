@@ -17,6 +17,7 @@ Postgen AI est une plateforme SaaS qui transforme une simple idée ou un sujet e
 - **📊 Dashboard** : Vue d'ensemble des contenus et projets
 - **💾 Sauvegarde** : Historique des contenus générés
 - **🎨 Branding** : Personnalisation des couleurs et du ton
+- **🔗 Intégration Canva** : connectez votre compte pour éditer les visuels
 
 ## 🛠️ Technologies
 
@@ -24,7 +25,7 @@ Postgen AI est une plateforme SaaS qui transforme une simple idée ou un sujet e
  - **UI** : Tailwind CSS, shadcn/ui, Framer Motion
 - **Backend** : Appwrite (BaaS)
 - **IA** : API Copilot locale
-- **Images** : Pexels API
+- **Images** : Canva API (génération) et Pexels (fallback)
 
 ## 📦 Installation
 
@@ -55,6 +56,13 @@ npm install
 cp .env.example .env.local
 ```
 Remplir les variables avec vos clés Appwrite et Pexels.
+
+Ajouter vos identifiants Canva pour l'intégration :
+```
+CANVA_CLIENT_ID=your_canva_client_id
+CANVA_CLIENT_SECRET=your_canva_secret
+CANVA_REDIRECT_URI=http://localhost:3000/api/canva/callback
+```
 
 Ajouter également les clés Stripe :
 ```

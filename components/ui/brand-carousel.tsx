@@ -15,6 +15,7 @@ import {
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { fetchPexelsImage } from "@/lib/fetchPexelsImage";
+import { createCanvaDesign } from "@/lib/canva";
 import html2canvas from "html2canvas";
 
 interface CarouselSlide {
@@ -58,6 +59,7 @@ export const BrandCarousel = ({
   const [generatedImages, setGeneratedImages] = useState<{
     [key: number]: string;
   }>({});
+  const [editLinks, setEditLinks] = useState<{ [key: number]: string }>({});
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -65,14 +67,34 @@ export const BrandCarousel = ({
   useEffect(() => {
     const fetchImages = async () => {
       const images: { [key: number]: string } = {};
+      const links: { [key: number]: string } = {};
+      const tokenMatch = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("canva_token="));
+      const token = tokenMatch ? tokenMatch.split("=")[1] : null;
       for (let i = 0; i < slides.length; i++) {
         const prompt = slides[i].imagePrompt;
-        const imageUrl = await fetchPexelsImage(prompt);
+        let imageUrl: string | null = null;
+        if (token) {
+          try {
+            const res = await createCanvaDesign(token, {
+              title: slides[i].title,
+              content: slides[i].content,
+            });
+            imageUrl = res.preview_url;
+            links[i] = res.edit_url;
+          } catch (e) {
+            imageUrl = await fetchPexelsImage(prompt);
+          }
+        } else {
+          imageUrl = await fetchPexelsImage(prompt);
+        }
         if (imageUrl) {
           images[i] = imageUrl;
         }
       }
       setGeneratedImages(images);
+      setEditLinks(links);
       setImagesLoaded(true);
     };
     fetchImages();
@@ -219,7 +241,13 @@ export const BrandCarousel = ({
                   backgroundColor: slide.visualElements.backgroundColor,
                 }}
               >
-                {renderInstagramSlide(slide, branding, generatedImages[index], index)}
+                {renderInstagramSlide(
+                  slide,
+                  branding,
+                  generatedImages[index],
+                  index,
+                  editLinks[index],
+                )}
                 
                 {/* Overlay pour les slides non actives */}
                 {!isActive && (
@@ -357,6 +385,7 @@ function renderInstagramSlide(
   branding: BrandingData,
   generatedImage: string,
   slideIndex: number,
+  editUrl?: string,
 ) {
   const { layout } = slide.visualElements;
 
@@ -440,6 +469,17 @@ function renderInstagramSlide(
     ),
   };
 
+  const editBadge = editUrl ? (
+    <a
+      href={editUrl}
+      target="_blank"
+      rel="noreferrer"
+      className="absolute bottom-4 right-4 text-xs px-2 py-1 bg-white/80 rounded-md"
+    >
+      Modifier sur Canva
+    </a>
+  ) : null;
+
   // Layout adapté pour Instagram
   switch (layout) {
     case "image-focus":
@@ -455,39 +495,40 @@ function renderInstagramSlide(
               {commonElements.topicBadge}
             </div>
           </div>
+          {editBadge}
         </div>
       );
 
     case "text-focus":
       return (
-        <div className="flex flex-col justify-center items-center p-8 text-center h-full">
+        <div className="relative flex flex-col justify-center items-center p-8 text-center h-full">
           {commonElements.logo}
           <div className="space-y-4 max-w-lg">
             {commonElements.title}
             {commonElements.content}
             {commonElements.topicBadge}
           </div>
+          {editBadge}
         </div>
       );
 
     case "balanced":
       return (
-        <div className="grid grid-cols-2 h-full">
-          <div className="relative">
-            {commonElements.image}
-          </div>
+        <div className="relative grid grid-cols-2 h-full">
+          <div className="relative">{commonElements.image}</div>
           <div className="flex flex-col justify-center p-6 space-y-4">
             {commonElements.logo}
             {commonElements.title}
             {commonElements.content}
             {commonElements.topicBadge}
           </div>
+          {editBadge}
         </div>
       );
 
     case "quote":
       return (
-        <div className="flex flex-col justify-center items-center p-8 text-center h-full relative">
+        <div className="relative flex flex-col justify-center items-center p-8 text-center h-full">
           {generatedImage && (
             <div className="absolute inset-0">
               <img
@@ -515,12 +556,13 @@ function renderInstagramSlide(
               {commonElements.topicBadge}
             </div>
           </div>
+          {editBadge}
         </div>
       );
 
     case "cta":
       return (
-        <div className="flex flex-col justify-center items-center p-8 text-center h-full space-y-6">
+        <div className="relative flex flex-col justify-center items-center p-8 text-center h-full space-y-6">
           {commonElements.logo}
           <div className="space-y-4 max-w-lg">
             {commonElements.title}
@@ -536,18 +578,20 @@ function renderInstagramSlide(
             </motion.button>
             {commonElements.topicBadge}
           </div>
+          {editBadge}
         </div>
       );
 
     default:
       return (
-        <div className="flex flex-col justify-center items-center p-8 text-center h-full">
+        <div className="relative flex flex-col justify-center items-center p-8 text-center h-full">
           {commonElements.logo}
           <div className="space-y-4 max-w-lg">
             {commonElements.title}
             {commonElements.content}
             {commonElements.topicBadge}
           </div>
+          {editBadge}
         </div>
       );
   }
