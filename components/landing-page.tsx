@@ -18,7 +18,10 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-black/[0.96] text-white relative overflow-hidden">
-      <Spotlight className="-top-40 left-0 md:left-60 md:-top-20" fill="white" />
+      <Spotlight
+        className="-top-40 left-0 md:left-60 md:-top-20"
+        fill="white"
+      />
       <BackgroundBeams />
       <div className="relative z-10 flex flex-col items-center px-4 py-20 space-y-12">
         <AnimataCard className="text-center space-y-4 max-w-2xl bg-neutral-950/50">
@@ -28,7 +31,7 @@ export default function LandingPage() {
           <p className="text-xl text-neutral-300">
             Créez du contenu qui captive et convertit, sans effort.
           </p>
-          <CuicuiButton asChild size="lg" className="mt-4">
+          <CuicuiButton size="lg" className="mt-4">
             <Link href="/auth">Commencer gratuitement</Link>
           </CuicuiButton>
         </AnimataCard>

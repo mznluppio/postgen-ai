@@ -24,13 +24,15 @@ export default function IntegrationsPage() {
           {status === "connected" && (
             <p className="text-sm text-green-600">Compte Canva connecté !</p>
           )}
-          {error && <p className="text-sm text-red-600">Erreur de connexion.</p>}
+          {error && (
+            <p className="text-sm text-red-600">Erreur de connexion.</p>
+          )}
           <p>Connectez votre compte Canva pour modifier les visuels générés.</p>
           <CuicuiButton>
             <a href="/api/canva/auth">Connecter Canva</a>
           </CuicuiButton>
           {status === "connected" && (
-            <AceternityButton asChild className="px-4 py-2">
+            <AceternityButton className="px-4 py-2">
               <a href="https://www.canva.com">Ouvrir Canva</a>
             </AceternityButton>
           )}
