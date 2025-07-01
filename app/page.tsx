@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { AceternityButton } from "@/components/ui/aceternity-button";
 import LandingPage from "@/components/landing-page";
 
 export default function Home() {
@@ -34,10 +34,10 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <Button disabled>
-        <Loader2 className="w-4 h-4 animate-spin" />
+      <AceternityButton disabled className="px-6 py-3 text-sm">
+        <Loader2 className="w-4 h-4 animate-spin mr-2" />
         Chargement...
-      </Button>
+      </AceternityButton>
     </div>
   );
 }

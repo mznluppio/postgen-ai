@@ -5,6 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { AnimataCard } from "@/components/ui/animata-card";
 import { CuicuiButton } from "@/components/ui/cuicui-button";
+import { AceternityButton } from "@/components/ui/aceternity-button";
 
 export default function IntegrationsPage() {
   const params = useSearchParams();
@@ -28,6 +29,11 @@ export default function IntegrationsPage() {
           <CuicuiButton asChild>
             <a href="/api/canva/auth">Connecter Canva</a>
           </CuicuiButton>
+          {status === "connected" && (
+            <AceternityButton asChild className="px-4 py-2">
+              <a href="https://www.canva.com">Ouvrir Canva</a>
+            </AceternityButton>
+          )}
         </CardContent>
       </AnimataCard>
     </div>
