@@ -17,14 +17,15 @@ Postgen AI est une plateforme SaaS qui transforme une simple idée ou un sujet e
 - **📊 Dashboard** : Vue d'ensemble des contenus et projets
 - **💾 Sauvegarde** : Historique des contenus générés
 - **🎨 Branding** : Personnalisation des couleurs et du ton
+- **🔗 Intégration Canva** : connectez votre compte pour éditer les visuels
 
 ## 🛠️ Technologies
 
 - **Frontend** : Next.js 15, React 19, TypeScript
-- **UI** : Tailwind CSS, shadcn/ui, Framer Motion
+ - **UI** : Tailwind CSS, shadcn/ui, Framer Motion, acertenityUI, animata.design
 - **Backend** : Appwrite (BaaS)
 - **IA** : API Copilot locale
-- **Images** : Pexels API
+- **Images** : Canva API (génération) et Pexels (fallback)
 
 ## 📦 Installation
 
@@ -37,7 +38,9 @@ cd postgen-ai
 2. **Installer les dépendances**
 ```bash
 npm install
+npm install acertenityui animata-design
 ```
+
 
 3. **Configuration Appwrite**
    - Créer un projet sur [Appwrite Cloud](https://cloud.appwrite.io)
@@ -47,12 +50,38 @@ npm install
      - `organizations` (organisations)
      - `projects` (projets)
      - `content` (contenus générés)
+    - `usage` (suivi de consommation)
 
 4. **Variables d'environnement**
 ```bash
 cp .env.example .env.local
 ```
 Remplir les variables avec vos clés Appwrite et Pexels.
+
+Ajouter vos identifiants Canva pour l'intégration :
+```
+CANVA_CLIENT_ID=your_canva_client_id
+CANVA_CLIENT_SECRET=your_canva_secret
+CANVA_REDIRECT_URI=http://127.0.0.1:3000/api/canva/callback
+```
+
+### Connexion à Canva
+
+L'authentification à Canva utilise le flux OAuth avec PKCE. La route
+`/api/canva/auth` génère automatiquement un `code_challenge` et conserve le
+`code_verifier` dans un cookie. Une fois l'utilisateur connecté et redirigé vers
+`/api/canva/callback`, ce dernier échange le code contre un jeton d'accès qui
+est stocké dans le cookie `canva_token`.
+
+Pensez à ajouter l'URL de redirection
+`http://127.0.0.1:3000/api/canva/callback` dans le tableau de bord Canva.
+
+Ajouter également les clés Stripe :
+```
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_PRICE_PRO=price_pro_id
+STRIPE_PRICE_ENTERPRISE=price_enterprise_id
+```
 
 5. **Lancer le projet**
 ```bash
@@ -111,6 +140,21 @@ npm run dev
    - `type` (enum: social, article, email, carousel)
    - `createdBy` (string)
    - `createdAt` (datetime)
+5. **usage**
+   - `organizationId` (string)
+   - `month` (string, format YYYY-MM)
+   - `count` (number)
+
+## 🚦 SaaS Flow
+
+Chaque organisation possède un champ `plan` dans la collection `organizations`.
+Le plan détermine la limite mensuelle de génération de contenu, stockée dans la
+collection `usage`. Lors de la génération, l'API vérifie la limite via
+`checkLimit` qui récupère automatiquement le plan de l'organisation.
+Si la limite est atteinte, l'utilisateur est invité à passer à un plan
+supérieur depuis la page **Facturation**. L'amélioration du plan déclenche un
+checkout Stripe puis met à jour le champ `plan` de l'organisation lorsque le
+paiement réussit.
 
 ## 🎯 Roadmap
 
@@ -129,9 +173,9 @@ npm run dev
 - [ ] Analytics de performance
 
 ### Phase 3 - Monétisation
-- [ ] Plans d'abonnement
-- [ ] Paiements Stripe
-- [ ] Limites d'usage
+- [x] Plans d'abonnement
+- [x] Paiements Stripe
+- [x] Limites d'usage
 - [ ] Fonctionnalités premium
 
 ## 🤝 Contribution

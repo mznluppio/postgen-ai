@@ -4,13 +4,16 @@ import {
   Briefcase,
   Building2,
   Calendar,
+  CreditCard,
   FileText,
   FolderOpen,
   Home,
+  HelpCircle,
   ImageIcon,
   Lightbulb,
   Mail,
   MessageSquare,
+  Bell,
   Palette,
   Settings,
   Users,
@@ -105,12 +108,12 @@ export const mainNavigation: NavigationItem[] = [
   },
   {
     title: "Content Library",
-    url: "/library",
+    url: "/dashboard/library",
     icon: FolderOpen,
   },
   {
     title: "Analytics",
-    url: "/analytics",
+    url: "/dashboard/analytics",
     icon: BarChart3,
   },
 ];
@@ -202,10 +205,26 @@ export const contentCreation: NavigationItem[] = [
     url: "/dashboard/content/email",
     icon: Mail,
     items: [
-      { title: "Email Campaigns", url: "/content/email/campaigns", icon: Mail },
-      { title: "Newsletter", url: "/content/email/newsletter", icon: Mail },
-      { title: "Drip Sequences", url: "/content/email/sequences", icon: Mail },
-      { title: "Templates", url: "/content/email/templates", icon: Mail },
+      {
+        title: "Email Campaigns",
+        url: "/dashboard/content/email/campaigns",
+        icon: Mail,
+      },
+      {
+        title: "Newsletter",
+        url: "/dashboard/content/email/newsletter",
+        icon: Mail,
+      },
+      {
+        title: "Drip Sequences",
+        url: "/dashboard/content/email/sequences",
+        icon: Mail,
+      },
+      {
+        title: "Templates",
+        url: "/dashboard/content/email/templates",
+        icon: Mail,
+      },
     ],
   },
 ];
@@ -213,27 +232,27 @@ export const contentCreation: NavigationItem[] = [
 export const managementTools: NavigationItem[] = [
   {
     title: "Content Calendar",
-    url: "/tools/calendar",
+    url: "/dashboard/tools/calendar",
     icon: Calendar,
   },
   {
     title: "Brand Guidelines",
-    url: "/tools/brand",
+    url: "/dashboard/tools/brand",
     icon: Palette,
   },
   {
     title: "Target Audiences",
-    url: "/tools/audiences",
+    url: "/dashboard/tools/audiences",
     icon: Users,
   },
   {
     title: "AI Models",
-    url: "/tools/ai-models",
+    url: "/dashboard/tools/ai-models",
     icon: Bot,
   },
   {
     title: "Content Ideas",
-    url: "/tools/ideas",
+    url: "/dashboard/tools/ideas",
     icon: Lightbulb,
   },
 ];

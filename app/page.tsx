@@ -3,9 +3,9 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { AuthGuard } from "@/components/auth/AuthGuard";
-import AuthPage from "./auth/page";
 import { Loader2 } from "lucide-react";
+import { AceternityButton } from "@/components/ui/aceternity-button";
+import LandingPage from "@/components/landing-page";
 
 export default function Home() {
   const { user, loading } = useAuth();
@@ -28,11 +28,16 @@ export default function Home() {
     );
   }
 
+  if (!user) {
+    return <LandingPage />;
+  }
+
   return (
-    <AuthGuard fallback={<AuthPage />}>
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin" />
-      </div>
-    </AuthGuard>
+    <div className="min-h-screen flex items-center justify-center">
+      <AceternityButton disabled className="px-6 py-3 text-sm">
+        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+        Chargement...
+      </AceternityButton>
+    </div>
   );
 }

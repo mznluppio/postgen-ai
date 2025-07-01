@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { useAuth } from "@/contexts/AuthContext"
+import * as React from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Sidebar,
   SidebarContent,
@@ -14,21 +14,22 @@ import {
   SidebarMenuItem,
   SidebarRail,
   SidebarSeparator,
-} from "@/components/ui/sidebar"
-import { OrganizationSwitcher } from "@/components/dashboard/OrganizationSwitcher"
-import { UserMenu } from "./user-menu"
-import { NavigationSection } from "./navigation-section"
+} from "@/components/ui/sidebar";
+import { OrganizationSwitcher } from "@/components/dashboard/OrganizationSwitcher";
+import { UserMenu } from "./user-menu";
+import { NavigationSection } from "./navigation-section";
 import {
   mainNavigation,
   contentCreation,
   managementTools,
   organizationSettings,
-} from "@/lib/navigation-data"
+  accountNavigation,
+} from "@/lib/navigation-data";
 
 export function AppSidebar() {
-  const { user } = useAuth()
+  const { user } = useAuth();
 
-  if (!user) return null
+  if (!user) return null;
 
   return (
     <Sidebar variant="inset" collapsible="icon">
@@ -53,7 +54,10 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel>Création de contenu</SidebarGroupLabel>
           <SidebarGroupContent>
-            <NavigationSection items={contentCreation} defaultOpen={["Social Media"]} />
+            <NavigationSection
+              items={contentCreation}
+              defaultOpen={["Social Media"]}
+            />
           </SidebarGroupContent>
         </SidebarGroup>
 
@@ -72,6 +76,8 @@ export function AppSidebar() {
             <NavigationSection items={organizationSettings} />
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {/* Account */}
       </SidebarContent>
 
       <SidebarFooter>
@@ -84,5 +90,5 @@ export function AppSidebar() {
 
       <SidebarRail />
     </Sidebar>
-  )
+  );
 }
