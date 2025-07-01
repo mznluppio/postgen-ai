@@ -102,15 +102,14 @@ export function UserMenu({ user }: UserMenuProps) {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => router.push("/dashboard/profile")}>
-          <User className="mr-2 h-4 w-4" />
-          Profil
-        </DropdownMenuItem>
+
         <DropdownMenuItem onClick={() => router.push("/dashboard/account")}>
           <Settings className="mr-2 h-4 w-4" />
           Paramètres du compte
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => router.push("/dashboard/notifications")}>
+        <DropdownMenuItem
+          onClick={() => router.push("/dashboard/notifications")}
+        >
           <Bell className="mr-2 h-4 w-4" />
           Notifications
         </DropdownMenuItem>

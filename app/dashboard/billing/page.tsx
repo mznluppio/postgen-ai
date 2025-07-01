@@ -38,13 +38,21 @@ export default function BillingPage() {
   if (!currentOrganization) return null;
 
   const plan = currentOrganization.plan as keyof typeof planLimits;
-  const price = plan === "enterprise" ? "99€/mois" : plan === "pro" ? "29€/mois" : "Gratuit";
+  const price =
+    plan === "enterprise"
+      ? "99€/mois"
+      : plan === "pro"
+        ? "29€/mois"
+        : "Gratuit";
 
   const handleUpgrade = async (targetPlan: "pro" | "enterprise") => {
     const res = await fetch("/api/stripe/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ plan: targetPlan, orgId: currentOrganization.$id }),
+      body: JSON.stringify({
+        plan: targetPlan,
+        orgId: currentOrganization.$id,
+      }),
     });
     if (res.ok) {
       const data = await res.json();
@@ -64,10 +72,17 @@ export default function BillingPage() {
           <p className="text-lg font-semibold capitalize">{plan}</p>
           <p className="text-muted-foreground">{price}</p>
           <p>
-            Utilisation ce mois-ci : {usage} / {planLimits[plan] === Infinity ? "∞" : planLimits[plan]}
+            Utilisation ce mois-ci : {usage} /{" "}
+            {planLimits[plan] === Infinity ? "∞" : planLimits[plan]}
           </p>
           {plan !== "enterprise" && (
-            <Button onClick={() => handleUpgrade(plan === "starter" ? "pro" : "enterprise")}>Améliorer l'offre</Button>
+            <Button
+              onClick={() =>
+                handleUpgrade(plan === "starter" ? "pro" : "enterprise")
+              }
+            >
+              Améliorer l'offre
+            </Button>
           )}
         </CardContent>
       </Card>

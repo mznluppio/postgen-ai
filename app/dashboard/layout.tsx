@@ -17,6 +17,7 @@ import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import AuthPage from "../auth/page";
+import { CreateOrganizationDialog } from "@/components/dashboard/CreateOrganizationDialog";
 
 export default function DashboardLayout({
   children,
@@ -29,7 +30,9 @@ export default function DashboardLayout({
   if (!currentOrganization) {
     return (
       <AuthGuard fallback={<AuthPage />}>
-        <div className="p-4">Chargement...</div>
+        <div>
+          <CreateOrganizationDialog />
+        </div>
       </AuthGuard>
     );
   }

@@ -16,7 +16,7 @@ export default function IntegrationsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p>Connectez votre compte Canva pour modifier les visuels générés.</p>
-          <CuicuiButton asChild>
+          <CuicuiButton>
             <a href="/api/canva/auth">Connecter Canva</a>
           </CuicuiButton>
         </CardContent>
