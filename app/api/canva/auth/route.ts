@@ -5,7 +5,8 @@ import { generateCanvaAuth } from "@/lib/canva";
 export async function GET() {
   const { url, verifier } = generateCanvaAuth();
   const res = NextResponse.redirect(url);
-  cookies().set("canva_verifier", verifier, {
+  const cookieStore = await cookies();
+  cookieStore.set("canva_verifier", verifier, {
     httpOnly: true,
     path: "/",
   });
