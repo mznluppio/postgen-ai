@@ -25,7 +25,7 @@ Postgen AI est une plateforme SaaS qui transforme une simple idée ou un sujet e
  - **UI** : Tailwind CSS, shadcn/ui, Framer Motion, acertenityUI, animata.design
 - **Backend** : Appwrite (BaaS)
 - **IA** : API Copilot locale
-- **Images** : Canva API (génération) et Pexels (fallback)
+ - **Images** : Canva API (génération)
 
 ## 📦 Installation
 
@@ -56,7 +56,7 @@ npm install acertenityui animata-design
 ```bash
 cp .env.example .env.local
 ```
-Remplir les variables avec vos clés Appwrite et Pexels.
+Remplir les variables avec vos clés Appwrite.
 
 Ajouter vos identifiants Canva pour l'intégration :
 ```
