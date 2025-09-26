@@ -1,0 +1,135 @@
+"use client";
+
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { AUTOMATION_CHANNELS, formatScheduleDisplay } from "@/lib/content-automation";
+import { useMemo } from "react";
+
+interface ContentAutomationControlsProps {
+  selectedChannels: string[];
+  onChannelsChange: (channels: string[]) => void;
+  scheduledAt: string;
+  onScheduledAtChange: (value: string) => void;
+  automationEnabled: boolean;
+  onAutomationChange: (value: boolean) => void;
+}
+
+export default function ContentAutomationControls({
+  selectedChannels,
+  onChannelsChange,
+  scheduledAt,
+  onScheduledAtChange,
+  automationEnabled,
+  onAutomationChange,
+}: ContentAutomationControlsProps) {
+  const minDateTimeValue = useMemo(() => {
+    const now = new Date();
+    const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+    return local.toISOString().slice(0, 16);
+  }, []);
+
+  const automationSummary = useMemo(() => {
+    if (!automationEnabled) {
+      return "Automatisation désactivée (publication manuelle)";
+    }
+
+    if (!scheduledAt) {
+      return "Automatisation activée (en attente de planification)";
+    }
+
+    return `Automatisation programmée le ${formatScheduleDisplay(scheduledAt)}`;
+  }, [automationEnabled, scheduledAt]);
+
+  const handleChannelToggle = (channelId: string, nextValue: boolean) => {
+    if (nextValue) {
+      onChannelsChange(Array.from(new Set([...selectedChannels, channelId])));
+    } else {
+      onChannelsChange(selectedChannels.filter((id) => id !== channelId));
+    }
+  };
+
+  return (
+    <Card className="border-dashed">
+      <CardHeader>
+        <CardTitle className="text-lg">Diffusion & automatisation</CardTitle>
+        <CardDescription>
+          Choisissez les canaux de publication, planifiez un horaire et
+          contrôlez l'automatisation.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="space-y-3">
+          <Label className="text-sm font-medium">Canaux de diffusion</Label>
+          <div className="flex flex-wrap gap-3">
+            {AUTOMATION_CHANNELS.map((channel) => {
+              const id = `channel-${channel.id}`;
+              return (
+                <div key={channel.id} className="flex items-center gap-2">
+                  <Checkbox
+                    id={id}
+                    checked={selectedChannels.includes(channel.id)}
+                    onCheckedChange={(checked) =>
+                      handleChannelToggle(channel.id, Boolean(checked))
+                    }
+                  />
+                  <Label htmlFor={id} className="text-sm">
+                    {channel.label}
+                  </Label>
+                </div>
+              );
+            })}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Sélectionnez au moins un canal pour activer l'automatisation.
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="scheduledAt" className="text-sm font-medium">
+            Planifier la publication
+          </Label>
+          <Input
+            id="scheduledAt"
+            type="datetime-local"
+            value={scheduledAt}
+            onChange={(event) => onScheduledAtChange(event.target.value)}
+            min={minDateTimeValue}
+          />
+          <p className="text-xs text-muted-foreground">
+            Définissez un horaire pour diffuser automatiquement votre contenu.
+            L'heure est basée sur votre fuseau horaire local.
+          </p>
+        </div>
+
+        <div className="flex items-center justify-between rounded-lg border bg-muted/30 px-3 py-2">
+          <div className="space-y-1">
+            <p className="text-sm font-medium">Automatisation</p>
+            <p className="text-xs text-muted-foreground">
+              Activez pour laisser Postgen publier automatiquement aux heures
+              programmées.
+            </p>
+          </div>
+          <Switch
+            checked={automationEnabled}
+            onCheckedChange={(checked) => onAutomationChange(Boolean(checked))}
+            disabled={selectedChannels.length === 0}
+          />
+        </div>
+
+        <Badge variant={automationEnabled ? "default" : "outline"}>
+          {automationSummary}
+        </Badge>
+      </CardContent>
+    </Card>
+  );
+}

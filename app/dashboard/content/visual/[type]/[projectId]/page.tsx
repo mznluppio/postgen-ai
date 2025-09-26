@@ -22,11 +22,32 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
 import { databases } from "@/lib/appwrite-config";
 import { ID, Query } from "appwrite";
 import ContentGenerator from "@/components/dashboard/ContentGenerator";
-import { Briefcase, Copy, Trash2 } from "lucide-react";
+import ContentAutomationControls from "@/components/dashboard/ContentAutomationControls";
+import {
+  CHANNEL_LABELS,
+  formatScheduleDisplay,
+  getAutomationBadgeVariant,
+  getAutomationStatusLabel,
+} from "@/lib/content-automation";
+import {
+  BookDashed,
+  Briefcase,
+  Copy,
+  Trash2,
+  Download,
+  Eye,
+  ExternalLink,
+  Code,
+  Image,
+  FileText,
+  Monitor,
+  Smartphone,
+  ImageIcon,
+} from "lucide-react";
+
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -45,6 +66,19 @@ export default function VisualContentPage() {
   const [updatingContentId, setUpdatingContentId] = useState<string | null>(
     null,
   );
+  const [exportingPng, setExportingPng] = useState<string | null>(null);
+  const [selectedChannels, setSelectedChannels] = useState<string[]>([
+    "linkedin",
+  ]);
+  const [scheduledAt, setScheduledAt] = useState<string>("");
+  const [automationEnabled, setAutomationEnabled] = useState(false);
+
+  useEffect(() => {
+    if (selectedChannels.length === 0 && automationEnabled) {
+      setAutomationEnabled(false);
+    }
+  }, [selectedChannels, automationEnabled]);
+
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -76,9 +110,25 @@ export default function VisualContentPage() {
     fetchContents();
   }, [projectId, currentOrganization, type]);
 
-  const handleSaveContent = async (content: string) => {
+  const handleSaveContent = async (
+    content: string,
+    generatedTopic: string,
+  ) => {
     if (!currentOrganization || !projectId || !user) return;
-    const topic = content.slice(0, 50);
+    const topic = generatedTopic?.trim() || content.slice(0, 50);
+    const scheduledIso = scheduledAt
+      ? new Date(scheduledAt).toISOString()
+      : null;
+    const automationActive = automationEnabled && selectedChannels.length > 0;
+    const now = new Date();
+    const scheduleDate = scheduledIso ? new Date(scheduledIso) : null;
+    const automationStatus = automationActive
+      ? scheduleDate
+        ? scheduleDate.getTime() > now.getTime()
+          ? "scheduled"
+          : "ready"
+        : "pending"
+      : "manual";
     const doc = await databases.createDocument(
       process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!,
       process.env.NEXT_PUBLIC_APPWRITE_CONTENTS_COLLECTION_ID!,
@@ -91,8 +141,11 @@ export default function VisualContentPage() {
         topic,
         content,
         createdAt: new Date().toISOString(),
+        channels: selectedChannels,
+        scheduledAt: scheduledIso,
+        automationEnabled: automationActive,
+        automationStatus,
         status: "draft",
-        channels: ["visual", type.toString()].filter(Boolean) as string[],
         scheduledAt: null,
       },
     );
@@ -270,6 +323,15 @@ Génère un contenu de type "${type}" en lien avec ce projet.`;
         </p>
       </motion.div>
 
+      <ContentAutomationControls
+        selectedChannels={selectedChannels}
+        onChannelsChange={setSelectedChannels}
+        scheduledAt={scheduledAt}
+        onScheduledAtChange={setScheduledAt}
+        automationEnabled={automationEnabled}
+        onAutomationChange={setAutomationEnabled}
+      />
+
       <ContentGenerator
         type={type as string}
         title={`Générateur de contenu ${type}`}
@@ -361,7 +423,81 @@ Génère un contenu de type "${type}" en lien avec ce projet.`;
                 ))}
               </div>
             </div>
-          )}
+          </div>
+
+          <div className="grid gap-6">
+            {existingContents.map((item, index) => (
+              <motion.div
+                key={item.$id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05, duration: 0.3 }}
+              >
+                <Card className="transition-all hover:shadow-lg border-0 shadow-md">
+                  <CardHeader className="pb-4">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-base font-semibold">
+                        {getContentInfo(item).title}
+                      </CardTitle>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        {getContentInfo(item).icon}
+                        <span className="capitalize">{item.type}</span>
+                      </div>
+                    </div>
+                    <CardDescription className="text-xs">
+                      Créé le{" "}
+                      {new Date(item.createdAt).toLocaleDateString("fr-FR", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </CardDescription>
+                  </CardHeader>
+
+                  <CardContent className="pt-0">
+                    {renderContentPreview(item)}
+                  </CardContent>
+
+                  <CardFooter className="pt-4 border-t bg-gray-50/50 flex flex-col gap-4">
+                    <div className="flex flex-col gap-2">
+                      <div className="flex flex-wrap gap-2">
+                        {Array.isArray(item.channels) && item.channels.length > 0 ? (
+                          item.channels.map((channel: string) => (
+                            <Badge key={channel} variant="secondary" className="capitalize">
+                              {CHANNEL_LABELS[channel] ?? channel}
+                            </Badge>
+                          ))
+                        ) : (
+                          <Badge variant="outline">Canaux non définis</Badge>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                        <Badge variant={getAutomationBadgeVariant(item.automationStatus)}>
+                          {getAutomationStatusLabel(item.automationStatus)}
+                        </Badge>
+                        {item.scheduledAt ? (
+                          <span>
+                            Planifié pour {formatScheduleDisplay(item.scheduledAt)}
+                          </span>
+                        ) : item.automationEnabled ? (
+                          <span>En attente de planification</span>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 w-full">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleCopy(item.content, item.$id)}
+                        className="flex-1 min-w-[100px]"
+                      >
+                        <Copy className="w-4 h-4 mr-1" />
+                        {copiedId === item.$id ? "Copié !" : "Copier tout"}
+                      </Button>
+
 
           {groupedContents.others.length > 0 && (
             <div className="space-y-3">

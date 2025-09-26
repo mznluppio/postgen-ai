@@ -22,10 +22,16 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
 import { databases } from "@/lib/appwrite-config";
 import { ID, Query } from "appwrite";
 import ContentGenerator from "@/components/dashboard/ContentGenerator";
+import ContentAutomationControls from "@/components/dashboard/ContentAutomationControls";
+import {
+  formatScheduleDisplay,
+  getAutomationBadgeVariant,
+  getAutomationStatusLabel,
+  CHANNEL_LABELS,
+} from "@/lib/content-automation";
 import { Briefcase, Copy, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -39,12 +45,18 @@ export default function SocialContentPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [contentToDelete, setContentToDelete] = useState<any>(null);
   const [confirmationText, setConfirmationText] = useState("");
-  const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
-  const [contentToSchedule, setContentToSchedule] = useState<any>(null);
-  const [scheduleDate, setScheduleDate] = useState<string>("");
-  const [updatingContentId, setUpdatingContentId] = useState<string | null>(
-    null,
-  );
+  const [selectedChannels, setSelectedChannels] = useState<string[]>([
+    "linkedin",
+  ]);
+  const [scheduledAt, setScheduledAt] = useState<string>("");
+  const [automationEnabled, setAutomationEnabled] = useState(false);
+
+  useEffect(() => {
+    if (selectedChannels.length === 0 && automationEnabled) {
+      setAutomationEnabled(false);
+    }
+  }, [selectedChannels, automationEnabled]);
+
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -76,9 +88,25 @@ export default function SocialContentPage() {
     fetchContents();
   }, [projectId, currentOrganization, type]);
 
-  const handleSaveContent = async (content: string) => {
+  const handleSaveContent = async (
+    content: string,
+    generatedTopic: string,
+  ) => {
     if (!currentOrganization || !projectId || !user) return;
-    const topic = content.slice(0, 50);
+    const topic = generatedTopic?.trim() || content.slice(0, 50);
+    const scheduledIso = scheduledAt
+      ? new Date(scheduledAt).toISOString()
+      : null;
+    const automationActive = automationEnabled && selectedChannels.length > 0;
+    const now = new Date();
+    const scheduleDate = scheduledIso ? new Date(scheduledIso) : null;
+    const automationStatus = automationActive
+      ? scheduleDate
+        ? scheduleDate.getTime() > now.getTime()
+          ? "scheduled"
+          : "ready"
+        : "pending"
+      : "manual";
     const doc = await databases.createDocument(
       process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!,
       process.env.NEXT_PUBLIC_APPWRITE_CONTENTS_COLLECTION_ID!,
@@ -91,9 +119,11 @@ export default function SocialContentPage() {
         topic,
         content,
         createdAt: new Date().toISOString(),
+        channels: selectedChannels,
+        scheduledAt: scheduledIso,
+        automationEnabled: automationActive,
+        automationStatus,
         status: "draft",
-        channels: ["social", type.toString()].filter(Boolean) as string[],
-        scheduledAt: null,
       },
     );
     setExistingContents((prev) => [doc, ...prev]);
@@ -270,6 +300,15 @@ Génère un contenu de type "${type}" en lien avec ce projet.`;
         </p>
       </motion.div>
 
+      <ContentAutomationControls
+        selectedChannels={selectedChannels}
+        onChannelsChange={setSelectedChannels}
+        scheduledAt={scheduledAt}
+        onScheduledAtChange={setScheduledAt}
+        automationEnabled={automationEnabled}
+        onAutomationChange={setAutomationEnabled}
+      />
+
       <ContentGenerator
         type={type as string}
         title={`Générateur de contenu ${type}`}
@@ -293,142 +332,81 @@ Génère un contenu de type "${type}" en lien avec ce projet.`;
           }}
         >
           <h2 className="text-xl font-semibold">Contenus générés</h2>
-
-          {groupedContents.drafts.length > 0 && (
-            <div className="space-y-3">
-              <h3 className="text-lg font-semibold">Brouillons</h3>
-              <div className="grid gap-4">
-                {groupedContents.drafts.map((item, index) => (
-                  <motion.div
-                    key={item.$id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05, duration: 0.3 }}
-                  >
-                    <Card className="transition-shadow hover:shadow-md">
-                      <CardHeader className="flex flex-row items-start justify-between">
-                        <div>
-                          <CardTitle className="text-base">{item.topic}</CardTitle>
-                          <CardDescription className="text-xs text-muted-foreground">
-                            {new Date(item.createdAt).toLocaleString()}
-                          </CardDescription>
-                        </div>
-                        <Badge className={cn("text-xs", statusBadgeClass(item.status))}>
-                          {(item.status ?? "draft").toUpperCase()}
+          <div className="grid gap-4">
+            {existingContents.map((item, index) => (
+              <motion.div
+                key={item.$id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05, duration: 0.3 }}
+              >
+                <Card className="transition-shadow hover:shadow-md">
+                  <CardHeader>
+                    <CardTitle className="text-base">{item.topic}</CardTitle>
+                    <CardDescription className="text-xs text-muted-foreground">
+                      {new Date(item.createdAt).toLocaleString()}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="whitespace-pre-line text-sm">
+                      {item.content}
+                    </p>
+                  </CardContent>
+                  <CardFooter className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex flex-col gap-2 w-full sm:w-auto">
+                      <div className="flex flex-wrap gap-2">
+                        {Array.isArray(item.channels) && item.channels.length > 0 ? (
+                          item.channels.map((channel: string) => (
+                            <Badge key={channel} variant="secondary" className="capitalize">
+                              {CHANNEL_LABELS[channel] ?? channel}
+                            </Badge>
+                          ))
+                        ) : (
+                          <Badge variant="outline">Canaux non définis</Badge>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                        <Badge variant={getAutomationBadgeVariant(item.automationStatus)}>
+                          {getAutomationStatusLabel(item.automationStatus)}
                         </Badge>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="whitespace-pre-line text-sm">{item.content}</p>
-                      </CardContent>
-                      <CardFooter className="flex flex-wrap gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleCopy(item.content, item.$id)}
-                        >
-                          <Copy className="w-4 h-4 mr-1" />
-                          {copiedId === item.$id ? "Copié !" : "Copier"}
-                        </Button>
-                        <Button
-                          size="sm"
-                          onClick={() => handlePublishContent(item.$id)}
-                          disabled={updatingContentId === item.$id}
-                        >
-                          Publier
-                        </Button>
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => openScheduleDialog(item)}
-                          disabled={updatingContentId === item.$id}
-                        >
-                          Programmer
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => {
-                            setContentToDelete(item);
-                            setShowDeleteModal(true);
-                          }}
-                        >
-                          <Trash2 className="w-4 h-4 mr-1" />
-                          Supprimer
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          )}
+                        {item.scheduledAt ? (
+                          <span>
+                            Planifié pour {formatScheduleDisplay(item.scheduledAt)}
+                          </span>
+                        ) : item.automationEnabled ? (
+                          <span>En attente de planification</span>
+                        ) : null}
+                      </div>
+                    </div>
 
-          {groupedContents.others.length > 0 && (
-            <div className="space-y-3">
-              <h3 className="text-lg font-semibold">Programmés & publiés</h3>
-              <div className="grid gap-4">
-                {groupedContents.others.map((item, index) => (
-                  <motion.div
-                    key={item.$id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05, duration: 0.3 }}
-                  >
-                    <Card className="transition-shadow hover:shadow-md">
-                      <CardHeader className="flex flex-row items-start justify-between">
-                        <div>
-                          <CardTitle className="text-base">{item.topic}</CardTitle>
-                          <CardDescription className="text-xs text-muted-foreground">
-                            {new Date(item.createdAt).toLocaleString()}
-                          </CardDescription>
-                          {scheduledDescription(item) && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Programmée pour {scheduledDescription(item)}
-                            </p>
-                          )}
-                        </div>
-                        <Badge className={cn("text-xs", statusBadgeClass(item.status))}>
-                          {(item.status ?? "draft").toUpperCase()}
-                        </Badge>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="whitespace-pre-line text-sm">{item.content}</p>
-                      </CardContent>
-                      <CardFooter className="flex flex-wrap gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleCopy(item.content, item.$id)}
-                        >
-                          <Copy className="w-4 h-4 mr-1" />
-                          {copiedId === item.$id ? "Copié !" : "Copier"}
-                        </Button>
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => openScheduleDialog(item)}
-                          disabled={updatingContentId === item.$id}
-                        >
-                          Reprogrammer
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => {
-                            setContentToDelete(item);
-                            setShowDeleteModal(true);
-                          }}
-                        >
-                          <Trash2 className="w-4 h-4 mr-1" />
-                          Supprimer
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          )}
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleCopy(item.content, item.$id)}
+                      >
+                        <Copy className="w-4 h-4 mr-1" />
+                        {copiedId === item.$id ? "Copié !" : "Copier"}
+                      </Button>
+
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => {
+                          setContentToDelete(item);
+                          setShowDeleteModal(true);
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4 mr-1" />
+                        Supprimer
+                      </Button>
+                    </div>
+                  </CardFooter>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+
         </motion.div>
       ) : (
         <div className="flex flex-col items-center justify-center text-center text-muted-foreground py-20">
