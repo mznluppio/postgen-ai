@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import AuthPage from "../auth/page";
@@ -13,6 +13,7 @@ import {
   Linkedin,
   ArrowLeft,
   CheckCircle,
+  Search,
   Sparkles,
   Eye,
   Hash,
@@ -20,6 +21,8 @@ import {
   Palette,
   Image as ImageIcon,
   Layout,
+  FileText,
+  Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,7 +34,14 @@ import { Spotlight } from "@/components/ui/spotlight";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Search } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { PROMPT_LIBRARY, PromptBrief, getPromptById } from "@/lib/prompts";
 
 interface BrandingData {
   topic: string;
@@ -39,6 +49,7 @@ interface BrandingData {
   primaryColor: string;
   secondaryColor: string;
   tone: string;
+  promptBrief?: PromptBrief | null;
 }
 
 interface CarouselSlide {
@@ -99,6 +110,8 @@ const suggestions = [
 
 export default function Generate() {
   const { user, currentOrganization } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [topic, setTopic] = useState("");
   const [tone, setTone] = useState("professional");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -107,7 +120,12 @@ export default function Generate() {
   const [activeTab, setActiveTab] = useState("posts");
   const [isVisible, setIsVisible] = useState(false);
   const [currentSuggestion, setCurrentSuggestion] = useState(0);
-  const router = useRouter();
+  const [selectedPromptId, setSelectedPromptId] = useState<string>("");
+
+  const selectedPrompt = useMemo(
+    () => getPromptById(selectedPromptId),
+    [selectedPromptId],
+  );
 
   useEffect(() => {
     setIsVisible(true);
@@ -116,6 +134,24 @@ export default function Generate() {
     }, 3000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    const promptId = searchParams.get("promptId");
+    if (!promptId || promptId === selectedPromptId) {
+      return;
+    }
+
+    const prompt = getPromptById(promptId);
+    if (prompt) {
+      setSelectedPromptId(prompt.id);
+    }
+  }, [searchParams, selectedPromptId]);
+
+  useEffect(() => {
+    if (selectedPrompt) {
+      setTone(selectedPrompt.tone);
+    }
+  }, [selectedPrompt]);
 
   const generateContent = async () => {
     if (!topic.trim()) return;
@@ -129,6 +165,7 @@ export default function Generate() {
       primaryColor: "#0080FF",
       secondaryColor: "#0066CC",
       tone,
+      promptBrief: selectedPrompt ?? null,
     };
 
     try {
@@ -280,6 +317,86 @@ export default function Generate() {
                     ))}
                   </div>
                 </div>
+
+                {/* Prompt Library Selection */}
+                <Card className="bg-neutral-950/50 backdrop-blur-xl border-neutral-800">
+                  <CardHeader className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-neutral-100 text-lg flex items-center gap-2">
+                        <FileText className="h-5 w-5 text-blue-400" />
+                        Brief de campagne
+                      </CardTitle>
+                      {selectedPrompt && (
+                        <Badge variant="secondary" className="capitalize">
+                          {selectedPrompt.tone}
+                        </Badge>
+                      )}
+                    </div>
+                    <CardDescription className="text-neutral-400">
+                      Choisissez un template de brief aligné avec les promesses de Postgen AI ou explorez la bibliothèque.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-6">
+                      <div className="w-full md:w-2/3">
+                        <Select
+                          value={selectedPromptId || "none"}
+                          onValueChange={(value) =>
+                            setSelectedPromptId(value === "none" ? "" : value)
+                          }
+                        >
+                          <SelectTrigger className="bg-neutral-900/80 border-neutral-700 text-neutral-100">
+                            <SelectValue placeholder="Sélectionnez un brief prêt à l'emploi" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-neutral-900/95 border-neutral-700 text-neutral-100">
+                            <SelectItem value="none">Sans brief prédéfini</SelectItem>
+                            {PROMPT_LIBRARY.map((prompt) => (
+                              <SelectItem key={prompt.id} value={prompt.id}>
+                                {prompt.title}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex w-full items-center justify-between gap-3 md:w-1/3">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="flex-1 gap-2 border-neutral-700 text-neutral-200 hover:bg-neutral-800"
+                          onClick={() => setSelectedPromptId("")}
+                          disabled={!selectedPromptId}
+                        >
+                          <RefreshCw className="h-4 w-4" />
+                          Réinitialiser
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          className="flex-1 gap-2"
+                          onClick={() => router.push("/dashboard/prompts")}
+                        >
+                          <Sparkles className="h-4 w-4" />
+                          Explorer
+                        </Button>
+                      </div>
+                    </div>
+                    {selectedPrompt ? (
+                      <div className="rounded-xl border border-neutral-800 bg-neutral-900/60 p-4 text-left">
+                        <p className="text-sm text-neutral-200 font-medium">
+                          {selectedPrompt.description}
+                        </p>
+                        <p className="mt-3 text-sm leading-relaxed text-neutral-400">
+                          {selectedPrompt.instructions}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3 rounded-xl border border-dashed border-neutral-800 bg-neutral-900/40 p-4 text-sm text-neutral-400">
+                        <Info className="h-4 w-4" />
+                        Sélectionnez un brief pour pré-remplir les instructions envoyées à l'IA et garder une cohérence éditoriale.
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
 
                 {/* Tone Selection */}
                 <Card className="bg-neutral-950/50 backdrop-blur-xl border-neutral-800">

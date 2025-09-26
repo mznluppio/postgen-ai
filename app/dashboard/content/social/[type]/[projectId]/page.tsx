@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -34,6 +34,7 @@ import {
 } from "@/lib/content-automation";
 import { Briefcase, Copy, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 export default function SocialContentPage() {
   const { currentOrganization, user } = useAuth();
@@ -55,6 +56,7 @@ export default function SocialContentPage() {
       setAutomationEnabled(false);
     }
   }, [selectedChannels, automationEnabled]);
+
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -121,9 +123,113 @@ export default function SocialContentPage() {
         scheduledAt: scheduledIso,
         automationEnabled: automationActive,
         automationStatus,
+        status: "draft",
       },
     );
     setExistingContents((prev) => [doc, ...prev]);
+  };
+
+  const handlePublishContent = async (contentId: string) => {
+    try {
+      setUpdatingContentId(contentId);
+      const updated = await databases.updateDocument(
+        process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!,
+        process.env.NEXT_PUBLIC_APPWRITE_CONTENTS_COLLECTION_ID!,
+        contentId,
+        {
+          status: "published",
+          scheduledAt: null,
+        },
+      );
+      setExistingContents((prev) =>
+        prev.map((item) => (item.$id === contentId ? updated : item)),
+      );
+    } catch (error) {
+      console.error("Erreur lors de la publication :", error);
+    } finally {
+      setUpdatingContentId(null);
+    }
+  };
+
+  const formatDateForInput = (iso?: string | null) => {
+    if (!iso) return "";
+    const date = new Date(iso);
+    const tzOffset = date.getTimezoneOffset() * 60000;
+    return new Date(date.getTime() - tzOffset).toISOString().slice(0, 16);
+  };
+
+  const openScheduleDialog = (item: any) => {
+    setContentToSchedule(item);
+    setScheduleDate(formatDateForInput(item.scheduledAt));
+    setScheduleDialogOpen(true);
+  };
+
+  const resetScheduleState = () => {
+    setScheduleDialogOpen(false);
+    setContentToSchedule(null);
+    setScheduleDate("");
+  };
+
+  const handleScheduleContent = async () => {
+    if (!contentToSchedule || !scheduleDate) return;
+
+    try {
+      setUpdatingContentId(contentToSchedule.$id);
+      const scheduledAtISO = new Date(scheduleDate).toISOString();
+      const updated = await databases.updateDocument(
+        process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!,
+        process.env.NEXT_PUBLIC_APPWRITE_CONTENTS_COLLECTION_ID!,
+        contentToSchedule.$id,
+        {
+          status: "scheduled",
+          scheduledAt: scheduledAtISO,
+        },
+      );
+      setExistingContents((prev) =>
+        prev.map((item) => (item.$id === contentToSchedule.$id ? updated : item)),
+      );
+      resetScheduleState();
+    } catch (error) {
+      console.error("Erreur lors de la programmation :", error);
+    } finally {
+      setUpdatingContentId(null);
+    }
+  };
+
+  const statusBadgeClass = (status?: string) => {
+    switch (status) {
+      case "published":
+        return "bg-emerald-100 text-emerald-800";
+      case "scheduled":
+        return "bg-amber-100 text-amber-800";
+      default:
+        return "bg-slate-100 text-slate-700";
+    }
+  };
+
+  const groupedContents = useMemo(() => {
+    const drafts: any[] = [];
+    const others: any[] = [];
+
+    existingContents.forEach((item) => {
+      const status = item.status ?? "draft";
+      if (status === "draft") {
+        drafts.push(item);
+      } else {
+        others.push(item);
+      }
+    });
+
+    return { drafts, others };
+  }, [existingContents]);
+
+  const scheduledDescription = (item: any) => {
+    if (item.status !== "scheduled" || !item.scheduledAt) return null;
+    try {
+      return new Date(item.scheduledAt).toLocaleString();
+    } catch (error) {
+      return item.scheduledAt;
+    }
   };
 
   const handleCopy = async (text: string, id: string) => {
@@ -181,7 +287,7 @@ Génère un contenu de type "${type}" en lien avec ce projet.`;
         transition={{ duration: 0.5 }}
       >
         <h1 className="text-2xl font-bold tracking-tight">
-          Générateur de contenu <span className="capitalize">{type}</span> 
+          Générateur de contenu <span className="capitalize">{type}</span>
         </h1>
         {project?.name && (
           <div className="inline-flex items-center gap-2 px-3 py-1 text-sm rounded-full bg-muted text-muted-foreground w-fit">
@@ -214,7 +320,7 @@ Génère un contenu de type "${type}" en lien avec ce projet.`;
 
       {existingContents.length > 0 ? (
         <motion.div
-          className="space-y-4"
+          className="space-y-6"
           initial="hidden"
           animate="visible"
           variants={{
@@ -300,6 +406,7 @@ Génère un contenu de type "${type}" en lien avec ce projet.`;
               </motion.div>
             ))}
           </div>
+
         </motion.div>
       ) : (
         <div className="flex flex-col items-center justify-center text-center text-muted-foreground py-20">
@@ -334,6 +441,53 @@ Génère un contenu de type "${type}" en lien avec ce projet.`;
               disabled={confirmationText.toLowerCase() !== "supprimer"}
             >
               Supprimer définitivement
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={scheduleDialogOpen}
+        onOpenChange={(open) => {
+          setScheduleDialogOpen(open);
+          if (!open) {
+            resetScheduleState();
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Programmer la publication</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1">
+              <Label htmlFor="schedule-date">Date de publication</Label>
+              <Input
+                id="schedule-date"
+                type="datetime-local"
+                value={scheduleDate}
+                onChange={(event) => setScheduleDate(event.target.value)}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Sélectionnez la date et l'heure auxquelles ce contenu doit être
+              publié.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                resetScheduleState();
+              }}
+            >
+              Annuler
+            </Button>
+            <Button
+              onClick={handleScheduleContent}
+              disabled={!scheduleDate || updatingContentId === contentToSchedule?.$id}
+            >
+              Programmer
             </Button>
           </DialogFooter>
         </DialogContent>
