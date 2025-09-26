@@ -219,27 +219,27 @@ export const contentCreation: NavigationItem[] = [
 export const managementTools: NavigationItem[] = [
   {
     title: "Content Calendar",
-    url: "/tools/calendar",
+    url: "/dashboard/tools/calendar",
     icon: Calendar,
   },
   {
     title: "Brand Guidelines",
-    url: "/tools/brand",
+    url: "/dashboard/tools/brand",
     icon: Palette,
   },
   {
     title: "Target Audiences",
-    url: "/tools/audiences",
+    url: "/dashboard/tools/audiences",
     icon: Users,
   },
   {
     title: "AI Models",
-    url: "/tools/ai-models",
+    url: "/dashboard/tools/ai-models",
     icon: Bot,
   },
   {
     title: "Content Ideas",
-    url: "/tools/ideas",
+    url: "/dashboard/tools/ideas",
     icon: Lightbulb,
   },
 ];
