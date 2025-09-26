@@ -18,6 +18,23 @@ export interface User {
   currentOrganization?: string;
 }
 
+export interface SupportCenterConfig {
+  priorityEmail?: string;
+  priorityPhone?: string;
+  slackChannel?: string;
+  slaTier?: string;
+  slaDocumentUrl?: string;
+  ticketPortalUrl?: string;
+}
+
+export interface ComplianceConfig {
+  preferredDataRegion?: string;
+  dataRegions?: string[];
+  allowCustomRegion?: boolean;
+  complianceArtifacts?: string[];
+  requestContactEmail?: string;
+}
+
 export interface Organization {
   $id: string;
   name: string;
@@ -28,6 +45,8 @@ export interface Organization {
   members: string[];
   createdAt: string;
   teamId?: string;
+  supportCenter?: SupportCenterConfig;
+  compliance?: ComplianceConfig;
 }
 
 export class AuthService {
@@ -152,6 +171,21 @@ export class AuthService {
           members: [user.$id],
           createdAt: new Date().toISOString(),
           teamId: team.$id,
+          supportCenter: {
+            priorityEmail: "",
+            priorityPhone: "",
+            slackChannel: "",
+            slaTier: plan === "enterprise" ? "Enterprise" : "Standard",
+            slaDocumentUrl: "",
+            ticketPortalUrl: "",
+          },
+          compliance: {
+            preferredDataRegion: "eu",
+            dataRegions: ["eu"],
+            allowCustomRegion: plan === "enterprise",
+            complianceArtifacts: [],
+            requestContactEmail: "",
+          },
         }
       );
 

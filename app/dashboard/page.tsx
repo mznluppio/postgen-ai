@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Alert,
   AlertDescription,
@@ -40,6 +41,14 @@ import {
   Sparkles,
   TrendingDown,
   TrendingUp,
+  Users,
+  FileText,
+  Calendar,
+  Mail,
+  Phone,
+  MessageCircle,
+  LifeBuoy,
+
 } from "lucide-react";
 import { CreateOrganizationDialog } from "@/components/dashboard/CreateOrganizationDialog";
 import AuthPage from "../auth/page";
@@ -188,6 +197,11 @@ export default function Dashboard() {
       </AuthGuard>
     );
   }
+
+  const planDetails = PRICING_PLANS_BY_ID[currentOrganization.plan as PlanId];
+  const support = currentOrganization.supportCenter;
+  const compliance = currentOrganization.compliance;
+  const isEnterprise = currentOrganization.plan === "enterprise";
 
   const benchmark = insights?.planBenchmark;
   const weeklyProgress = benchmark?.weeklyViewTarget
@@ -473,6 +487,88 @@ export default function Dashboard() {
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               Analyse des métriques…
             </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {isEnterprise && (
+        <Card>
+          <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <LifeBuoy className="h-5 w-5 text-purple-600" />
+                Support prioritaire
+              </CardTitle>
+              <CardDescription>
+                Accédez rapidement à vos canaux Enterprise et à vos engagements SLA.
+              </CardDescription>
+            </div>
+            <Button variant="outline" asChild>
+              <a href="/dashboard/support">Ouvrir le centre de support</a>
+            </Button>
+          </CardHeader>
+          <CardContent className="grid gap-6 md:grid-cols-3">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Mail className="h-4 w-4 text-purple-600" />
+                Email prioritaire
+              </div>
+              <p className="text-sm font-medium">
+                {support?.priorityEmail || "Configurez un email prioritaire dans les paramètres"}
+              </p>
+              {support?.slackChannel && (
+                <p className="text-xs text-muted-foreground">
+                  Canal Slack : {support.slackChannel}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Phone className="h-4 w-4 text-purple-600" />
+                Ligne directe
+              </div>
+              <p className="text-sm font-medium">
+                {support?.priorityPhone || "Ajoutez une ligne directe pour vos incidents critiques"}
+              </p>
+              {support?.ticketPortalUrl && (
+                <p className="text-xs text-muted-foreground">
+                  Portail : {support.ticketPortalUrl.replace(/^https?:\/\//, "")}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <MessageCircle className="h-4 w-4 text-purple-600" />
+                Engagement SLA
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="secondary" className="uppercase">
+                  {support?.slaTier || "Non défini"}
+                </Badge>
+                <span className="text-xs text-muted-foreground">
+                  Région prioritaire : {compliance?.preferredDataRegion?.toUpperCase() || "EU"}
+                </span>
+              </div>
+              {support?.slaDocumentUrl ? (
+                <a
+                  href={support.slaDocumentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-purple-600 hover:underline"
+                >
+                  Consulter le document SLA
+                </a>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Ajoutez votre SLA pour le partager avec les équipes.
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
           ) : recommendationError ? (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
