@@ -33,6 +33,10 @@ export function getNextPlan(currentPlan: Plan): Plan | null {
   return PLAN_ORDER[index + 1];
 }
 
+export function isPlanAtLeast(current: Plan, minimum: Plan) {
+  return PLAN_ORDER.indexOf(current) >= PLAN_ORDER.indexOf(minimum);
+}
+
 export type PlanId = "starter" | "pro" | "enterprise";
 
 export interface PlanCTA {
