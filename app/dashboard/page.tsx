@@ -41,14 +41,10 @@ import {
   Sparkles,
   TrendingDown,
   TrendingUp,
-  Users,
-  FileText,
-  Calendar,
   Mail,
   Phone,
   MessageCircle,
   LifeBuoy,
-
 } from "lucide-react";
 import { CreateOrganizationDialog } from "@/components/dashboard/CreateOrganizationDialog";
 import AuthPage from "../auth/page";
@@ -198,7 +194,6 @@ export default function Dashboard() {
     );
   }
 
-  const planDetails = PRICING_PLANS_BY_ID[currentOrganization.plan as PlanId];
   const support = currentOrganization.supportCenter;
   const compliance = currentOrganization.compliance;
   const isEnterprise = currentOrganization.plan === "enterprise";
@@ -487,9 +482,31 @@ export default function Dashboard() {
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               Analyse des métriques…
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          ) : recommendationError ? (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Recommandations indisponibles</AlertTitle>
+              <AlertDescription>{recommendationError}</AlertDescription>
+            </Alert>
+          ) : recommendations.length ? (
+            <ul className="space-y-3 text-sm">
+              {recommendations.map((suggestion, index) => (
+                <li
+                  key={`${suggestion}-${index}`}
+                  className="flex items-start gap-2 rounded-md border border-dashed border-muted-foreground/40 bg-muted/40 p-3"
+                >
+                  <Sparkles className="mt-0.5 h-4 w-4 text-primary" />
+                  <span>{suggestion}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="text-sm text-muted-foreground">
+              Cliquez sur « Générer » pour obtenir des pistes d'amélioration ciblées.
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {isEnterprise && (
         <Card>
@@ -569,31 +586,6 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       )}
-          ) : recommendationError ? (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Recommandations indisponibles</AlertTitle>
-              <AlertDescription>{recommendationError}</AlertDescription>
-            </Alert>
-          ) : recommendations.length ? (
-            <ul className="space-y-3 text-sm">
-              {recommendations.map((suggestion, index) => (
-                <li
-                  key={`${suggestion}-${index}`}
-                  className="flex items-start gap-2 rounded-md border border-dashed border-muted-foreground/40 bg-muted/40 p-3"
-                >
-                  <Sparkles className="mt-0.5 h-4 w-4 text-primary" />
-                  <span>{suggestion}</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="text-sm text-muted-foreground">
-              Cliquez sur « Générer » pour obtenir des pistes d'amélioration ciblées.
-            </div>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }
