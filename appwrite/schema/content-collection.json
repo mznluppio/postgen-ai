@@ -1,0 +1,86 @@
+{
+  "$id": "content",
+  "name": "Content",
+  "attributes": [
+    {
+      "key": "organizationId",
+      "type": "string",
+      "required": true,
+      "size": 64
+    },
+    {
+      "key": "projectId",
+      "type": "string",
+      "required": false,
+      "size": 64
+    },
+    {
+      "key": "userId",
+      "type": "string",
+      "required": true,
+      "size": 64
+    },
+    {
+      "key": "topic",
+      "type": "string",
+      "required": true,
+      "size": 256
+    },
+    {
+      "key": "content",
+      "type": "string",
+      "required": true,
+      "array": false
+    },
+    {
+      "key": "type",
+      "type": "string",
+      "required": true,
+      "size": 64
+    },
+    {
+      "key": "status",
+      "type": "string",
+      "required": true,
+      "size": 16,
+      "default": "draft",
+      "enum": ["draft", "scheduled", "published"]
+    },
+    {
+      "key": "channels",
+      "type": "string",
+      "required": false,
+      "array": true,
+      "size": 64,
+      "default": []
+    },
+    {
+      "key": "scheduledAt",
+      "type": "datetime",
+      "required": false
+    },
+    {
+      "key": "createdBy",
+      "type": "string",
+      "required": true,
+      "size": 64
+    },
+    {
+      "key": "createdAt",
+      "type": "datetime",
+      "required": true
+    }
+  ],
+  "indexes": [
+    {
+      "key": "organizationId_status",
+      "type": "key",
+      "attributes": ["organizationId", "status"]
+    },
+    {
+      "key": "projectId_status",
+      "type": "key",
+      "attributes": ["projectId", "status"]
+    }
+  ]
+}

@@ -24,9 +24,31 @@ import {
   managementTools,
   organizationSettings,
 } from "@/lib/navigation-data"
+import { useOrganizationIntegrations } from "@/hooks/useOrganizationIntegrations"
 
 export function AppSidebar() {
-  const { user } = useAuth()
+  const { user, currentOrganization } = useAuth()
+  const { activeCount } = useOrganizationIntegrations(currentOrganization)
+
+  const settingsNavigation = React.useMemo(
+    () =>
+      organizationSettings.map((item) => {
+        if (item.url === "/dashboard/settings/integrations") {
+          const badge =
+            activeCount > 0
+              ? `${activeCount} connecté${activeCount > 1 ? "s" : ""}`
+              : undefined
+
+          return {
+            ...item,
+            badge,
+          }
+        }
+
+        return item
+      }),
+    [activeCount],
+  )
 
   if (!user) return null
 
@@ -69,7 +91,7 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel>Organisation</SidebarGroupLabel>
           <SidebarGroupContent>
-            <NavigationSection items={organizationSettings} />
+            <NavigationSection items={settingsNavigation} />
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>

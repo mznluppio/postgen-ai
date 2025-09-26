@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -21,13 +21,23 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { databases } from "@/lib/appwrite-config";
 import { ID, Query } from "appwrite";
 import ContentGenerator from "@/components/dashboard/ContentGenerator";
-import { BookDashed, Briefcase, Copy, RefreshCcw, Trash2 } from "lucide-react";
-import { motion } from "framer-motion";
+import ContentAutomationControls from "@/components/dashboard/ContentAutomationControls";
+import {
+  CHANNEL_LABELS,
+  formatScheduleDisplay,
+  getAutomationBadgeVariant,
+  getAutomationStatusLabel,
+} from "@/lib/content-automation";
 
-export default function SocialContentPage() {
+import { Briefcase, Copy, Trash2 } from "lucide-react";
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
+
+export default function ArticleContentPage() {
   const { currentOrganization, user } = useAuth();
   const { type, projectId } = useParams();
   const [project, setProject] = useState<any>(null);
@@ -36,6 +46,23 @@ export default function SocialContentPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [contentToDelete, setContentToDelete] = useState<any>(null);
   const [confirmationText, setConfirmationText] = useState("");
+  const [selectedChannels, setSelectedChannels] = useState<string[]>([
+    "linkedin",
+  ]);
+  const [scheduledAt, setScheduledAt] = useState<string>("");
+  const [automationEnabled, setAutomationEnabled] = useState(false);
+
+  useEffect(() => {
+    if (selectedChannels.length === 0 && automationEnabled) {
+      setAutomationEnabled(false);
+    }
+  }, [selectedChannels, automationEnabled]);
+  const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
+  const [contentToSchedule, setContentToSchedule] = useState<any>(null);
+  const [scheduleDate, setScheduleDate] = useState<string>("");
+  const [updatingContentId, setUpdatingContentId] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -67,9 +94,25 @@ export default function SocialContentPage() {
     fetchContents();
   }, [projectId, currentOrganization, type]);
 
-  const handleSaveContent = async (content: string) => {
+  const handleSaveContent = async (
+    content: string,
+    generatedTopic: string,
+  ) => {
     if (!currentOrganization || !projectId || !user) return;
-    const topic = content.slice(0, 50);
+    const topic = generatedTopic?.trim() || content.slice(0, 50);
+    const scheduledIso = scheduledAt
+      ? new Date(scheduledAt).toISOString()
+      : null;
+    const automationActive = automationEnabled && selectedChannels.length > 0;
+    const now = new Date();
+    const scheduleDate = scheduledIso ? new Date(scheduledIso) : null;
+    const automationStatus = automationActive
+      ? scheduleDate
+        ? scheduleDate.getTime() > now.getTime()
+          ? "scheduled"
+          : "ready"
+        : "pending"
+      : "manual";
     const doc = await databases.createDocument(
       process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!,
       process.env.NEXT_PUBLIC_APPWRITE_CONTENTS_COLLECTION_ID!,
@@ -82,9 +125,117 @@ export default function SocialContentPage() {
         topic,
         content,
         createdAt: new Date().toISOString(),
+        channels: selectedChannels,
+        scheduledAt: scheduledIso,
+        automationEnabled: automationActive,
+        automationStatus,
+        status: "draft",
       },
     );
     setExistingContents((prev) => [doc, ...prev]);
+  };
+
+  const handlePublishContent = async (contentId: string) => {
+    try {
+      setUpdatingContentId(contentId);
+      const updated = await databases.updateDocument(
+        process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!,
+        process.env.NEXT_PUBLIC_APPWRITE_CONTENTS_COLLECTION_ID!,
+        contentId,
+        {
+          status: "published",
+          scheduledAt: null,
+        },
+      );
+      setExistingContents((prev) =>
+        prev.map((item) => (item.$id === contentId ? updated : item)),
+      );
+    } catch (error) {
+      console.error("Erreur lors de la publication :", error);
+    } finally {
+      setUpdatingContentId(null);
+    }
+  };
+
+  const formatDateForInput = (iso?: string | null) => {
+    if (!iso) return "";
+    const date = new Date(iso);
+    const tzOffset = date.getTimezoneOffset() * 60000;
+    return new Date(date.getTime() - tzOffset).toISOString().slice(0, 16);
+  };
+
+  const openScheduleDialog = (item: any) => {
+    setContentToSchedule(item);
+    setScheduleDate(formatDateForInput(item.scheduledAt));
+    setScheduleDialogOpen(true);
+  };
+
+  const resetScheduleState = () => {
+    setScheduleDialogOpen(false);
+    setContentToSchedule(null);
+    setScheduleDate("");
+  };
+
+  const handleScheduleContent = async () => {
+    if (!contentToSchedule || !scheduleDate) return;
+
+    try {
+      setUpdatingContentId(contentToSchedule.$id);
+      const scheduledAtISO = new Date(scheduleDate).toISOString();
+      const updated = await databases.updateDocument(
+        process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!,
+        process.env.NEXT_PUBLIC_APPWRITE_CONTENTS_COLLECTION_ID!,
+        contentToSchedule.$id,
+        {
+          status: "scheduled",
+          scheduledAt: scheduledAtISO,
+        },
+      );
+      setExistingContents((prev) =>
+        prev.map((item) => (item.$id === contentToSchedule.$id ? updated : item)),
+      );
+      resetScheduleState();
+    } catch (error) {
+      console.error("Erreur lors de la programmation :", error);
+    } finally {
+      setUpdatingContentId(null);
+    }
+  };
+
+  const statusBadgeClass = (status?: string) => {
+    switch (status) {
+      case "published":
+        return "bg-emerald-100 text-emerald-800";
+      case "scheduled":
+        return "bg-amber-100 text-amber-800";
+      default:
+        return "bg-slate-100 text-slate-700";
+    }
+  };
+
+  const groupedContents = useMemo(() => {
+    const drafts: any[] = [];
+    const others: any[] = [];
+
+    existingContents.forEach((item) => {
+      const status = item.status ?? "draft";
+      if (status === "draft") {
+        drafts.push(item);
+      } else {
+        others.push(item);
+      }
+    });
+
+    return { drafts, others };
+  }, [existingContents]);
+
+  const scheduledDescription = (item: any) => {
+    if (item.status !== "scheduled" || !item.scheduledAt) return null;
+    try {
+      return new Date(item.scheduledAt).toLocaleString();
+    } catch (error) {
+      return item.scheduledAt;
+    }
   };
 
   const handleCopy = async (text: string, id: string) => {
@@ -142,7 +293,7 @@ Génère un contenu de type "${type}" en lien avec ce projet.`;
         transition={{ duration: 0.5 }}
       >
         <h1 className="text-2xl font-bold tracking-tight">
-          Générateur de contenu <span className="capitalize">{type}</span> 
+          Générateur de contenu <span className="capitalize">{type}</span>
         </h1>
         {project?.name && (
           <div className="inline-flex items-center gap-2 px-3 py-1 text-sm rounded-full bg-muted text-muted-foreground w-fit">
@@ -155,6 +306,15 @@ Génère un contenu de type "${type}" en lien avec ce projet.`;
         </p>
       </motion.div>
 
+      <ContentAutomationControls
+        selectedChannels={selectedChannels}
+        onChannelsChange={setSelectedChannels}
+        scheduledAt={scheduledAt}
+        onScheduledAtChange={setScheduledAt}
+        automationEnabled={automationEnabled}
+        onAutomationChange={setAutomationEnabled}
+      />
+
       <ContentGenerator
         type={type as string}
         title={`Générateur de contenu ${type}`}
@@ -166,7 +326,7 @@ Génère un contenu de type "${type}" en lien avec ce projet.`;
 
       {existingContents.length > 0 ? (
         <motion.div
-          className="space-y-4"
+          className="space-y-6"
           initial="hidden"
           animate="visible"
           variants={{
@@ -198,27 +358,55 @@ Génère un contenu de type "${type}" en lien avec ce projet.`;
                       {item.content}
                     </p>
                   </CardContent>
-                  <CardFooter className="flex flex-wrap gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleCopy(item.content, item.$id)}
-                    >
-                      <Copy className="w-4 h-4 mr-1" />
-                      {copiedId === item.$id ? "Copié !" : "Copier"}
-                    </Button>
+                  <CardFooter className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex flex-col gap-2 w-full sm:w-auto">
+                      <div className="flex flex-wrap gap-2">
+                        {Array.isArray(item.channels) && item.channels.length > 0 ? (
+                          item.channels.map((channel: string) => (
+                            <Badge key={channel} variant="secondary" className="capitalize">
+                              {CHANNEL_LABELS[channel] ?? channel}
+                            </Badge>
+                          ))
+                        ) : (
+                          <Badge variant="outline">Canaux non définis</Badge>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                        <Badge variant={getAutomationBadgeVariant(item.automationStatus)}>
+                          {getAutomationStatusLabel(item.automationStatus)}
+                        </Badge>
+                        {item.scheduledAt ? (
+                          <span>
+                            Planifié pour {formatScheduleDisplay(item.scheduledAt)}
+                          </span>
+                        ) : item.automationEnabled ? (
+                          <span>En attente de planification</span>
+                        ) : null}
+                      </div>
+                    </div>
 
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => {
-                        setContentToDelete(item);
-                        setShowDeleteModal(true);
-                      }}
-                    >
-                      <Trash2 className="w-4 h-4 mr-1" />
-                      Supprimer
-                    </Button>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleCopy(item.content, item.$id)}
+                      >
+                        <Copy className="w-4 h-4 mr-1" />
+                        {copiedId === item.$id ? "Copié !" : "Copier"}
+                      </Button>
+
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => {
+                          setContentToDelete(item);
+                          setShowDeleteModal(true);
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4 mr-1" />
+                        Supprimer
+                      </Button>
+                    </div>
                   </CardFooter>
                 </Card>
               </motion.div>
@@ -258,6 +446,53 @@ Génère un contenu de type "${type}" en lien avec ce projet.`;
               disabled={confirmationText.toLowerCase() !== "supprimer"}
             >
               Supprimer définitivement
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={scheduleDialogOpen}
+        onOpenChange={(open) => {
+          setScheduleDialogOpen(open);
+          if (!open) {
+            resetScheduleState();
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Programmer la publication</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1">
+              <Label htmlFor="schedule-date">Date de publication</Label>
+              <Input
+                id="schedule-date"
+                type="datetime-local"
+                value={scheduleDate}
+                onChange={(event) => setScheduleDate(event.target.value)}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Sélectionnez la date et l'heure auxquelles ce contenu doit être
+              publié.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                resetScheduleState();
+              }}
+            >
+              Annuler
+            </Button>
+            <Button
+              onClick={handleScheduleContent}
+              disabled={!scheduleDate || updatingContentId === contentToSchedule?.$id}
+            >
+              Programmer
             </Button>
           </DialogFooter>
         </DialogContent>
