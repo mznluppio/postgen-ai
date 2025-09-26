@@ -26,27 +26,7 @@ import { databases } from "@/lib/appwrite-config";
 import { ID, Query } from "appwrite";
 import ContentGenerator from "@/components/dashboard/ContentGenerator";
 import ContentAutomationControls from "@/components/dashboard/ContentAutomationControls";
-import {
-  CHANNEL_LABELS,
-  formatScheduleDisplay,
-  getAutomationBadgeVariant,
-  getAutomationStatusLabel,
-} from "@/lib/content-automation";
-import {
-  BookDashed,
-  Briefcase,
-  Copy,
-  Trash2,
-  Download,
-  Eye,
-  ExternalLink,
-  Code,
-  Image,
-  FileText,
-  Monitor,
-  Smartphone,
-  ImageIcon,
-} from "lucide-react";
+import { Briefcase, Copy, Trash2 } from "lucide-react";
 
 import { motion } from "framer-motion";
 import { Label } from "@/components/ui/label";
@@ -69,7 +49,6 @@ export default function VisualContentPage() {
   const [updatingContentId, setUpdatingContentId] = useState<string | null>(
     null,
   );
-  const [exportingPng, setExportingPng] = useState<string | null>(null);
   const [selectedChannels, setSelectedChannels] = useState<string[]>([
     "linkedin",
   ]);
@@ -359,154 +338,80 @@ Génère un contenu de type "${type}" en lien avec ce projet.`;
         >
           <h2 className="text-xl font-semibold">Contenus générés</h2>
 
-          {groupedContents.drafts.length > 0 && (
-            <div className="space-y-3">
-              <h3 className="text-lg font-semibold">Brouillons</h3>
-              <div className="grid gap-4">
-                {groupedContents.drafts.map((item, index) => (
-                  <MotionDiv
-                    key={item.$id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05, duration: 0.3 }}
-                  >
-                    <Card className="transition-shadow hover:shadow-md">
-                      <CardHeader className="flex flex-row items-start justify-between">
-                        <div>
-                          <CardTitle className="text-base">{item.topic}</CardTitle>
-                          <CardDescription className="text-xs text-muted-foreground">
-                            {new Date(item.createdAt).toLocaleString()}
-                          </CardDescription>
-                        </div>
-                        <Badge className={cn("text-xs", statusBadgeClass(item.status))}>
-                          {(item.status ?? "draft").toUpperCase()}
-                        </Badge>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="whitespace-pre-line text-sm">{item.content}</p>
-                      </CardContent>
-                      <CardFooter className="flex flex-wrap gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleCopy(item.content, item.$id)}
-                        >
-                          <Copy className="w-4 h-4 mr-1" />
-                          {copiedId === item.$id ? "Copié !" : "Copier"}
-                        </Button>
-                        <Button
-                          size="sm"
-                          onClick={() => handlePublishContent(item.$id)}
-                          disabled={updatingContentId === item.$id}
-                        >
-                          Publier
-                        </Button>
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => openScheduleDialog(item)}
-                          disabled={updatingContentId === item.$id}
-                        >
-                          Programmer
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => {
-                            setContentToDelete(item);
-                            setShowDeleteModal(true);
-                          }}
-                        >
-                          <Trash2 className="w-4 h-4 mr-1" />
-                          Supprimer
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  </MotionDiv>
-                ))}
+            {groupedContents.drafts.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold">Brouillons</h3>
+                <div className="grid gap-4">
+                  {groupedContents.drafts.map((item, index) => (
+                    <MotionDiv
+                      key={item.$id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05, duration: 0.3 }}
+                    >
+                      <Card className="transition-shadow hover:shadow-md">
+                        <CardHeader className="flex flex-row items-start justify-between">
+                          <div>
+                            <CardTitle className="text-base">{item.topic}</CardTitle>
+                            <CardDescription className="text-xs text-muted-foreground">
+                              {new Date(item.createdAt).toLocaleString()}
+                            </CardDescription>
+                          </div>
+                          <Badge className={cn("text-xs", statusBadgeClass(item.status))}>
+                            {(item.status ?? "draft").toUpperCase()}
+                          </Badge>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="whitespace-pre-line text-sm">{item.content}</p>
+                        </CardContent>
+                        <CardFooter className="flex flex-wrap gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleCopy(item.content, item.$id)}
+                          >
+                            <Copy className="w-4 h-4 mr-1" />
+                            {copiedId === item.$id ? "Copié !" : "Copier"}
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => handlePublishContent(item.$id)}
+                            disabled={updatingContentId === item.$id}
+                          >
+                            Publier
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => openScheduleDialog(item)}
+                            disabled={updatingContentId === item.$id}
+                          >
+                            Programmer
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => {
+                              setContentToDelete(item);
+                              setShowDeleteModal(true);
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4 mr-1" />
+                            Supprimer
+                          </Button>
+                        </CardFooter>
+                      </Card>
+                    </MotionDiv>
+                  ))}
+                </div>
               </div>
-            </div>
-          </div>
+            )}
 
-          <div className="grid gap-6">
-            {existingContents.map((item, index) => (
-              <MotionDiv
-                key={item.$id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05, duration: 0.3 }}
-              >
-                <Card className="transition-all hover:shadow-lg border-0 shadow-md">
-                  <CardHeader className="pb-4">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-base font-semibold">
-                        {getContentInfo(item).title}
-                      </CardTitle>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        {getContentInfo(item).icon}
-                        <span className="capitalize">{item.type}</span>
-                      </div>
-                    </div>
-                    <CardDescription className="text-xs">
-                      Créé le{" "}
-                      {new Date(item.createdAt).toLocaleDateString("fr-FR", {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </CardDescription>
-                  </CardHeader>
-
-                  <CardContent className="pt-0">
-                    {renderContentPreview(item)}
-                  </CardContent>
-
-                  <CardFooter className="pt-4 border-t bg-gray-50/50 flex flex-col gap-4">
-                    <div className="flex flex-col gap-2">
-                      <div className="flex flex-wrap gap-2">
-                        {Array.isArray(item.channels) && item.channels.length > 0 ? (
-                          item.channels.map((channel: string) => (
-                            <Badge key={channel} variant="secondary" className="capitalize">
-                              {CHANNEL_LABELS[channel] ?? channel}
-                            </Badge>
-                          ))
-                        ) : (
-                          <Badge variant="outline">Canaux non définis</Badge>
-                        )}
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                        <Badge variant={getAutomationBadgeVariant(item.automationStatus)}>
-                          {getAutomationStatusLabel(item.automationStatus)}
-                        </Badge>
-                        {item.scheduledAt ? (
-                          <span>
-                            Planifié pour {formatScheduleDisplay(item.scheduledAt)}
-                          </span>
-                        ) : item.automationEnabled ? (
-                          <span>En attente de planification</span>
-                        ) : null}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2 w-full">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleCopy(item.content, item.$id)}
-                        className="flex-1 min-w-[100px]"
-                      >
-                        <Copy className="w-4 h-4 mr-1" />
-                        {copiedId === item.$id ? "Copié !" : "Copier tout"}
-                      </Button>
-
-
-          {groupedContents.others.length > 0 && (
-            <div className="space-y-3">
-              <h3 className="text-lg font-semibold">Programmés & publiés</h3>
-              <div className="grid gap-4">
-                {groupedContents.others.map((item, index) => (
+            {groupedContents.others.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold">Programmés & publiés</h3>
+                <div className="grid gap-4">
+                  {groupedContents.others.map((item, index) => (
                   <MotionDiv
                     key={item.$id}
                     initial={{ opacity: 0, y: 20 }}
