@@ -1,5 +1,8 @@
 "use client";
 
+import { useCallback, useMemo, useState } from "react";
+import { ID, Storage } from "appwrite";
+
 import { useAuth } from "@/contexts/AuthContext";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import {
@@ -13,15 +16,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import AuthPage from "@/app/auth/page";
-import { useState } from "react";
-import { ID, Storage } from "appwrite";
 import { client } from "@/lib/appwrite-config";
+import { useOrganizationMembers } from "@/hooks/useOrganizationMembers";
+import { getNextPlan, PLAN_LABELS } from "@/lib/plans";
 
 const storage = new Storage(client);
 
 export default function OrganizationSettingsPage() {
-  const { currentOrganization, updateCurrentOrganization } = useAuth();
+  const { currentOrganization, updateCurrentOrganization, refreshUser } =
+    useAuth();
   const [name, setName] = useState(currentOrganization?.name || "");
   const [description, setDescription] = useState(
     currentOrganization?.description || "",
@@ -29,6 +34,23 @@ export default function OrganizationSettingsPage() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [upgradeLoading, setUpgradeLoading] = useState(false);
+  const [upgradeSuccess, setUpgradeSuccess] = useState(false);
+  const [upgradeError, setUpgradeError] = useState<string | null>(null);
+
+  const handleTeamResolved = useCallback(async () => {
+    await refreshUser();
+  }, [refreshUser]);
+
+  const memberOptions = useMemo(
+    () => ({
+      onTeamResolved: handleTeamResolved,
+    }),
+    [handleTeamResolved],
+  );
+
+  const { members, loading: membersLoading, limit, isAtLimit, refresh } =
+    useOrganizationMembers(currentOrganization, memberOptions);
 
   if (!currentOrganization) {
     return (
@@ -75,6 +97,29 @@ export default function OrganizationSettingsPage() {
       console.error("Erreur lors de la mise à jour :", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const nextPlan = currentOrganization
+    ? getNextPlan(currentOrganization.plan)
+    : null;
+
+  const handleUpgrade = async () => {
+    if (!currentOrganization || !nextPlan) return;
+
+    setUpgradeLoading(true);
+    setUpgradeSuccess(false);
+    setUpgradeError(null);
+
+    try {
+      await updateCurrentOrganization({ plan: nextPlan });
+      await refresh();
+      setUpgradeSuccess(true);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Erreur inconnue";
+      setUpgradeError(message);
+    } finally {
+      setUpgradeLoading(false);
     }
   };
 
@@ -144,15 +189,99 @@ export default function OrganizationSettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Gérer les membres</CardTitle>
+          <CardTitle>Membres et plan</CardTitle>
           <CardDescription>
-            Invitez ou supprimez des membres de l'organisation.
+            Gérez les membres de votre organisation et surveillez votre
+            capacité selon le plan actuel.
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground text-sm">
-            (Fonctionnalité à venir)
-          </p>
+        <CardContent className="space-y-4">
+          <div>
+            <h3 className="text-sm font-semibold">Plan actuel</h3>
+            <p className="text-sm text-muted-foreground capitalize">
+              {PLAN_LABELS[currentOrganization.plan]}
+            </p>
+          </div>
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold">Membres</h3>
+            {membersLoading ? (
+              <p className="text-sm text-muted-foreground">
+                Chargement des membres...
+              </p>
+            ) : members.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Aucun membre pour le moment.
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {members.map((member) => {
+                  const isPending = !member.confirm;
+                  const statusLabel = isPending
+                    ? "Invitation en attente"
+                    : "Actif";
+                  const roleLabel = member.roles[0]
+                    ? member.roles[0].charAt(0).toUpperCase() +
+                      member.roles[0].slice(1)
+                    : "Membre";
+
+                  return (
+                    <li
+                      key={member.$id}
+                      className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-3"
+                    >
+                      <div>
+                        <p className="font-medium">
+                          {member.userEmail || member.userName || "Membre"}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Rôle : {roleLabel}
+                        </p>
+                      </div>
+                      <Badge variant={isPending ? "secondary" : "default"}>
+                        {statusLabel}
+                      </Badge>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            <p className="text-xs text-muted-foreground">
+              {limit === null
+                ? `Capacité illimitée avec le plan ${PLAN_LABELS[currentOrganization.plan]}.`
+                : `${members.length} membre(s) sur ${limit} autorisé(s).`}
+            </p>
+          </div>
+          {isAtLimit && nextPlan && (
+            <div className="space-y-2 rounded-md border border-destructive/50 bg-destructive/10 p-4">
+              <p className="text-sm font-medium text-destructive">
+                Vous avez atteint la limite de membres pour votre plan actuel.
+              </p>
+              <div className="flex flex-wrap items-center gap-3">
+                <Button
+                  variant="destructive"
+                  onClick={handleUpgrade}
+                  disabled={upgradeLoading}
+                >
+                  {upgradeLoading
+                    ? "Mise à niveau en cours..."
+                    : `Mettre à niveau vers ${PLAN_LABELS[nextPlan]}`}
+                </Button>
+                {upgradeError && (
+                  <p className="text-sm text-destructive">{upgradeError}</p>
+                )}
+                {upgradeSuccess && !upgradeError && (
+                  <p className="text-sm text-green-600">
+                    Plan mis à jour avec succès.
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+          {!nextPlan && limit !== null && (
+            <p className="text-sm text-muted-foreground">
+              Vous êtes déjà sur le plan le plus élevé disponible.
+            </p>
+          )}
         </CardContent>
       </Card>
     </div>
