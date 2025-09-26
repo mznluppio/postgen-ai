@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { CreateOrganizationDialog } from "@/components/dashboard/CreateOrganizationDialog";
 import AuthPage from "../auth/page";
+import { PRICING_PLANS_BY_ID, type PlanId } from "@/lib/plans";
 
 export default function Dashboard() {
   const { user, currentOrganization } = useAuth();
@@ -59,6 +60,8 @@ export default function Dashboard() {
       </AuthGuard>
     );
   }
+
+  const planDetails = PRICING_PLANS_BY_ID[currentOrganization.plan as PlanId];
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
@@ -130,12 +133,10 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold capitalize">
-              {currentOrganization.plan}
+              {planDetails?.name ?? currentOrganization.plan}
             </div>
             <p className="text-xs text-muted-foreground">
-              {currentOrganization.plan === "starter" && "Gratuit"}
-              {currentOrganization.plan === "pro" && "29€/mois"}
-              {currentOrganization.plan === "enterprise" && "99€/mois"}
+              {planDetails?.price ?? "Tarif personnalisé"}
             </p>
           </CardContent>
         </Card>

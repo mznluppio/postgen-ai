@@ -9,11 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { PRICING_PLANS, type PlanId } from "@/lib/plans";
 
 export function CreateOrganizationDialog() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
-  const [plan, setPlan] = useState<"starter" | "pro" | "enterprise">("starter");
+  const [plan, setPlan] = useState<PlanId>("starter");
   const [loading, setLoading] = useState(false);
   const { createOrganization } = useAuth();
   const { toast } = useToast();
@@ -70,14 +71,16 @@ export function CreateOrganizationDialog() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="org-plan">Plan</Label>
-            <Select value={plan} onValueChange={(value: "starter" | "pro" | "enterprise") => setPlan(value)}>
+            <Select value={plan} onValueChange={(value) => setPlan(value as PlanId)}>
               <SelectTrigger>
                 <SelectValue placeholder="Sélectionner un plan" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="starter">Starter - Gratuit</SelectItem>
-                <SelectItem value="pro">Pro - 29€/mois</SelectItem>
-                <SelectItem value="enterprise">Enterprise - 99€/mois</SelectItem>
+                {PRICING_PLANS.map((planOption) => (
+                  <SelectItem key={planOption.id} value={planOption.id}>
+                    {planOption.name} - {planOption.price}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
