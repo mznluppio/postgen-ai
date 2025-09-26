@@ -117,6 +117,11 @@ export const mainNavigation: NavigationItem[] = [
 
 export const contentCreation: NavigationItem[] = [
   {
+    title: "Drafts",
+    url: "/dashboard/content/drafts",
+    icon: FolderOpen,
+  },
+  {
     title: "Social Media",
     url: "/dashboard/content/social",
     icon: MessageSquare,

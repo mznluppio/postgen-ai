@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -21,11 +21,14 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import { databases } from "@/lib/appwrite-config";
 import { ID, Query } from "appwrite";
 import ContentGenerator from "@/components/dashboard/ContentGenerator";
-import { BookDashed, Briefcase, Copy, RefreshCcw, Trash2 } from "lucide-react";
+import { Briefcase, Copy, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 export default function SocialContentPage() {
   const { currentOrganization, user } = useAuth();
@@ -36,6 +39,12 @@ export default function SocialContentPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [contentToDelete, setContentToDelete] = useState<any>(null);
   const [confirmationText, setConfirmationText] = useState("");
+  const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
+  const [contentToSchedule, setContentToSchedule] = useState<any>(null);
+  const [scheduleDate, setScheduleDate] = useState<string>("");
+  const [updatingContentId, setUpdatingContentId] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -82,9 +91,115 @@ export default function SocialContentPage() {
         topic,
         content,
         createdAt: new Date().toISOString(),
+        status: "draft",
+        channels: ["social", type.toString()].filter(Boolean) as string[],
+        scheduledAt: null,
       },
     );
     setExistingContents((prev) => [doc, ...prev]);
+  };
+
+  const handlePublishContent = async (contentId: string) => {
+    try {
+      setUpdatingContentId(contentId);
+      const updated = await databases.updateDocument(
+        process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!,
+        process.env.NEXT_PUBLIC_APPWRITE_CONTENTS_COLLECTION_ID!,
+        contentId,
+        {
+          status: "published",
+          scheduledAt: null,
+        },
+      );
+      setExistingContents((prev) =>
+        prev.map((item) => (item.$id === contentId ? updated : item)),
+      );
+    } catch (error) {
+      console.error("Erreur lors de la publication :", error);
+    } finally {
+      setUpdatingContentId(null);
+    }
+  };
+
+  const formatDateForInput = (iso?: string | null) => {
+    if (!iso) return "";
+    const date = new Date(iso);
+    const tzOffset = date.getTimezoneOffset() * 60000;
+    return new Date(date.getTime() - tzOffset).toISOString().slice(0, 16);
+  };
+
+  const openScheduleDialog = (item: any) => {
+    setContentToSchedule(item);
+    setScheduleDate(formatDateForInput(item.scheduledAt));
+    setScheduleDialogOpen(true);
+  };
+
+  const resetScheduleState = () => {
+    setScheduleDialogOpen(false);
+    setContentToSchedule(null);
+    setScheduleDate("");
+  };
+
+  const handleScheduleContent = async () => {
+    if (!contentToSchedule || !scheduleDate) return;
+
+    try {
+      setUpdatingContentId(contentToSchedule.$id);
+      const scheduledAtISO = new Date(scheduleDate).toISOString();
+      const updated = await databases.updateDocument(
+        process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!,
+        process.env.NEXT_PUBLIC_APPWRITE_CONTENTS_COLLECTION_ID!,
+        contentToSchedule.$id,
+        {
+          status: "scheduled",
+          scheduledAt: scheduledAtISO,
+        },
+      );
+      setExistingContents((prev) =>
+        prev.map((item) => (item.$id === contentToSchedule.$id ? updated : item)),
+      );
+      resetScheduleState();
+    } catch (error) {
+      console.error("Erreur lors de la programmation :", error);
+    } finally {
+      setUpdatingContentId(null);
+    }
+  };
+
+  const statusBadgeClass = (status?: string) => {
+    switch (status) {
+      case "published":
+        return "bg-emerald-100 text-emerald-800";
+      case "scheduled":
+        return "bg-amber-100 text-amber-800";
+      default:
+        return "bg-slate-100 text-slate-700";
+    }
+  };
+
+  const groupedContents = useMemo(() => {
+    const drafts: any[] = [];
+    const others: any[] = [];
+
+    existingContents.forEach((item) => {
+      const status = item.status ?? "draft";
+      if (status === "draft") {
+        drafts.push(item);
+      } else {
+        others.push(item);
+      }
+    });
+
+    return { drafts, others };
+  }, [existingContents]);
+
+  const scheduledDescription = (item: any) => {
+    if (item.status !== "scheduled" || !item.scheduledAt) return null;
+    try {
+      return new Date(item.scheduledAt).toLocaleString();
+    } catch (error) {
+      return item.scheduledAt;
+    }
   };
 
   const handleCopy = async (text: string, id: string) => {
@@ -142,7 +257,7 @@ Génère un contenu de type "${type}" en lien avec ce projet.`;
         transition={{ duration: 0.5 }}
       >
         <h1 className="text-2xl font-bold tracking-tight">
-          Générateur de contenu <span className="capitalize">{type}</span> 
+          Générateur de contenu <span className="capitalize">{type}</span>
         </h1>
         {project?.name && (
           <div className="inline-flex items-center gap-2 px-3 py-1 text-sm rounded-full bg-muted text-muted-foreground w-fit">
@@ -166,7 +281,7 @@ Génère un contenu de type "${type}" en lien avec ce projet.`;
 
       {existingContents.length > 0 ? (
         <motion.div
-          className="space-y-4"
+          className="space-y-6"
           initial="hidden"
           animate="visible"
           variants={{
@@ -178,52 +293,142 @@ Génère un contenu de type "${type}" en lien avec ce projet.`;
           }}
         >
           <h2 className="text-xl font-semibold">Contenus générés</h2>
-          <div className="grid gap-4">
-            {existingContents.map((item, index) => (
-              <motion.div
-                key={item.$id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05, duration: 0.3 }}
-              >
-                <Card className="transition-shadow hover:shadow-md">
-                  <CardHeader>
-                    <CardTitle className="text-base">{item.topic}</CardTitle>
-                    <CardDescription className="text-xs text-muted-foreground">
-                      {new Date(item.createdAt).toLocaleString()}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="whitespace-pre-line text-sm">
-                      {item.content}
-                    </p>
-                  </CardContent>
-                  <CardFooter className="flex flex-wrap gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleCopy(item.content, item.$id)}
-                    >
-                      <Copy className="w-4 h-4 mr-1" />
-                      {copiedId === item.$id ? "Copié !" : "Copier"}
-                    </Button>
 
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => {
-                        setContentToDelete(item);
-                        setShowDeleteModal(true);
-                      }}
-                    >
-                      <Trash2 className="w-4 h-4 mr-1" />
-                      Supprimer
-                    </Button>
-                  </CardFooter>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
+          {groupedContents.drafts.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold">Brouillons</h3>
+              <div className="grid gap-4">
+                {groupedContents.drafts.map((item, index) => (
+                  <motion.div
+                    key={item.$id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05, duration: 0.3 }}
+                  >
+                    <Card className="transition-shadow hover:shadow-md">
+                      <CardHeader className="flex flex-row items-start justify-between">
+                        <div>
+                          <CardTitle className="text-base">{item.topic}</CardTitle>
+                          <CardDescription className="text-xs text-muted-foreground">
+                            {new Date(item.createdAt).toLocaleString()}
+                          </CardDescription>
+                        </div>
+                        <Badge className={cn("text-xs", statusBadgeClass(item.status))}>
+                          {(item.status ?? "draft").toUpperCase()}
+                        </Badge>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="whitespace-pre-line text-sm">{item.content}</p>
+                      </CardContent>
+                      <CardFooter className="flex flex-wrap gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCopy(item.content, item.$id)}
+                        >
+                          <Copy className="w-4 h-4 mr-1" />
+                          {copiedId === item.$id ? "Copié !" : "Copier"}
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => handlePublishContent(item.$id)}
+                          disabled={updatingContentId === item.$id}
+                        >
+                          Publier
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => openScheduleDialog(item)}
+                          disabled={updatingContentId === item.$id}
+                        >
+                          Programmer
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => {
+                            setContentToDelete(item);
+                            setShowDeleteModal(true);
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4 mr-1" />
+                          Supprimer
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {groupedContents.others.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold">Programmés & publiés</h3>
+              <div className="grid gap-4">
+                {groupedContents.others.map((item, index) => (
+                  <motion.div
+                    key={item.$id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05, duration: 0.3 }}
+                  >
+                    <Card className="transition-shadow hover:shadow-md">
+                      <CardHeader className="flex flex-row items-start justify-between">
+                        <div>
+                          <CardTitle className="text-base">{item.topic}</CardTitle>
+                          <CardDescription className="text-xs text-muted-foreground">
+                            {new Date(item.createdAt).toLocaleString()}
+                          </CardDescription>
+                          {scheduledDescription(item) && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Programmée pour {scheduledDescription(item)}
+                            </p>
+                          )}
+                        </div>
+                        <Badge className={cn("text-xs", statusBadgeClass(item.status))}>
+                          {(item.status ?? "draft").toUpperCase()}
+                        </Badge>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="whitespace-pre-line text-sm">{item.content}</p>
+                      </CardContent>
+                      <CardFooter className="flex flex-wrap gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCopy(item.content, item.$id)}
+                        >
+                          <Copy className="w-4 h-4 mr-1" />
+                          {copiedId === item.$id ? "Copié !" : "Copier"}
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => openScheduleDialog(item)}
+                          disabled={updatingContentId === item.$id}
+                        >
+                          Reprogrammer
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => {
+                            setContentToDelete(item);
+                            setShowDeleteModal(true);
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4 mr-1" />
+                          Supprimer
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          )}
         </motion.div>
       ) : (
         <div className="flex flex-col items-center justify-center text-center text-muted-foreground py-20">
@@ -258,6 +463,53 @@ Génère un contenu de type "${type}" en lien avec ce projet.`;
               disabled={confirmationText.toLowerCase() !== "supprimer"}
             >
               Supprimer définitivement
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={scheduleDialogOpen}
+        onOpenChange={(open) => {
+          setScheduleDialogOpen(open);
+          if (!open) {
+            resetScheduleState();
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Programmer la publication</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1">
+              <Label htmlFor="schedule-date">Date de publication</Label>
+              <Input
+                id="schedule-date"
+                type="datetime-local"
+                value={scheduleDate}
+                onChange={(event) => setScheduleDate(event.target.value)}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Sélectionnez la date et l'heure auxquelles ce contenu doit être
+              publié.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                resetScheduleState();
+              }}
+            >
+              Annuler
+            </Button>
+            <Button
+              onClick={handleScheduleContent}
+              disabled={!scheduleDate || updatingContentId === contentToSchedule?.$id}
+            >
+              Programmer
             </Button>
           </DialogFooter>
         </DialogContent>
