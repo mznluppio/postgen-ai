@@ -21,6 +21,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { databases } from "@/lib/appwrite-config";
 import { ID, Query } from "appwrite";
@@ -34,7 +35,6 @@ import {
 } from "@/lib/content-automation";
 import { Briefcase, Copy, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
 
 export default function SocialContentPage() {
   const { currentOrganization, user } = useAuth();
@@ -50,6 +50,10 @@ export default function SocialContentPage() {
   ]);
   const [scheduledAt, setScheduledAt] = useState<string>("");
   const [automationEnabled, setAutomationEnabled] = useState(false);
+  const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
+  const [contentToSchedule, setContentToSchedule] = useState<any>(null);
+  const [scheduleDate, setScheduleDate] = useState("");
+  const [updatingContentId, setUpdatingContentId] = useState<string | null>(null);
 
   useEffect(() => {
     if (selectedChannels.length === 0 && automationEnabled) {
