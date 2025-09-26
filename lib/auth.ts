@@ -380,6 +380,9 @@ export class AuthService {
     topic: string;
     content: any;
     type: "social" | "article" | "email" | "carousel";
+    status?: "draft" | "scheduled" | "published";
+    channels?: string[];
+    scheduledAt?: string | null;
   }) {
     try {
       const user = await this.getCurrentUser();
@@ -391,6 +394,9 @@ export class AuthService {
         ID.unique(),
         {
           ...data,
+          status: data.status ?? "draft",
+          channels: data.channels ?? [],
+          scheduledAt: data.scheduledAt ?? null,
           createdBy: user.$id,
           createdAt: new Date().toISOString(),
         }

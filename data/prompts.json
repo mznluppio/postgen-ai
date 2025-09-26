@@ -1,0 +1,44 @@
+[
+  {
+    "id": "multi-channel-launch",
+    "title": "Lancement multi-canal d'un nouveau produit",
+    "description": "Plan complet pour annoncer un nouveau produit sur LinkedIn, Instagram et via un carrousel inspirant.",
+    "tone": "inspiring",
+    "instructions": "Concentre-toi sur les bénéfices différenciants, montre la vision du produit et termine chaque bloc par un appel à l'action clair pour réserver une démo. Décline le message en gardant une ligne éditoriale cohérente sur tous les canaux."
+  },
+  {
+    "id": "thought-leadership-linkedin",
+    "title": "Prise de parole de leadership éclairé",
+    "description": "Structure pour positionner un dirigeant comme référence sur l'innovation et l'IA.",
+    "tone": "professional",
+    "instructions": "Inclue une statistique vérifiable, un point de vue différenciant et une projection sur les 12 prochains mois. Termine par une question ouverte qui engage la communauté professionnelle."
+  },
+  {
+    "id": "customer-success-story",
+    "title": "Success story client",
+    "description": "Mettre en avant l'histoire d'un client qui a multiplié par 4 son rythme de publication grâce à Postgen AI.",
+    "tone": "friendly",
+    "instructions": "Utilise une narration en trois actes (contexte, transformation, résultats). Humanise la relation avec des citations directes et cite des indicateurs chiffrés : x4 de publications, validation 4x plus rapide."
+  },
+  {
+    "id": "workflow-automation-update",
+    "title": "Annonce d'une nouvelle automatisation de workflow",
+    "description": "Informer les utilisateurs d'une fonctionnalité qui centralise validations et analytics.",
+    "tone": "professional",
+    "instructions": "Commence par le problème récurrent des équipes marketing (allers-retours, suivi des versions). Présente la fonctionnalité en trois bénéfices concrets et termine avec un CTA pour essayer le workflow dans le dashboard."
+  },
+  {
+    "id": "event-live-coverage",
+    "title": "Couverture live d'un événement",
+    "description": "Préparer un kit de communication pour un salon professionnel avec publication rapide.",
+    "tone": "casual",
+    "instructions": "Adopte un ton conversationnel. Prépare un teaser avant l'événement, un post pendant avec les coulisses, et un récap visuel après avec trois insights actionnables."
+  },
+  {
+    "id": "monthly-editorial-calendar",
+    "title": "Calendrier éditorial mensuel aligné",
+    "description": "Brief pour organiser quatre semaines de contenu cohérent autour d'un thème stratégique.",
+    "tone": "professional",
+    "instructions": "Découpe le mois en 4 thématiques hebdomadaires. Pour chaque semaine, définis l'objectif, l'idée forte, un angle pour LinkedIn, Instagram et un carrousel. Assure une continuité narrative et rappelle le bénéfice de centraliser le suivi dans Postgen AI."
+  }
+]

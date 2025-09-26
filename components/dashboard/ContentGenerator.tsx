@@ -9,7 +9,7 @@ interface ContentGeneratorProps {
   description?: string;
   placeholder?: string;
   llmApiUrl?: string;
-  onGenerated?: (content: string) => void;
+  onGenerated?: (content: string, topic: string) => void;
 }
 
 export default function ContentGenerator({
@@ -59,7 +59,7 @@ export default function ContentGenerator({
       }
 
       setContent(data.answer);
-      onGenerated?.(data.answer);
+      onGenerated?.(data.answer, topic);
     } catch (err: any) {
       console.error("Erreur lors de la génération:", err);
       setError(err.message || "Erreur inconnue lors de la génération");

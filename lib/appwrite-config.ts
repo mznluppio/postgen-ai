@@ -13,6 +13,8 @@ export const COLLECTIONS = {
   USERS: process.env.NEXT_PUBLIC_APPWRITE_USERS_COLLECTION_ID ?? "",
   INTEGRATIONS:
     process.env.NEXT_PUBLIC_APPWRITE_INTEGRATIONS_COLLECTION_ID ?? "",
+  ENGAGEMENT:
+    process.env.NEXT_PUBLIC_APPWRITE_ENGAGEMENT_COLLECTION_ID ?? "",
 };
 console.log(endpoint);
 console.log(projectId);

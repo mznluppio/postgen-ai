@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { PromptBrief } from "@/lib/prompts";
 export const dynamic = "force-dynamic";
 
 interface BrandingData {
@@ -7,6 +8,7 @@ interface BrandingData {
   primaryColor: string;
   secondaryColor: string;
   tone: string;
+  promptBrief?: PromptBrief | null;
 }
 
 interface CarouselSlide {
@@ -35,21 +37,27 @@ const tonePrompts = {
 export async function POST(request: NextRequest) {
   try {
     const brandingData: BrandingData = await request.json();
-    const { topic, tone, primaryColor, secondaryColor } = brandingData;
+    const { topic, tone, primaryColor, secondaryColor, promptBrief } = brandingData;
+
+    const effectiveTone = (promptBrief?.tone ?? tone) as keyof typeof tonePrompts;
 
     const toneInstruction =
-      tonePrompts[tone as keyof typeof tonePrompts] || tonePrompts.professional;
+      tonePrompts[effectiveTone] || tonePrompts.professional;
 
     const copilotAPI = process.env.COPILOT_API || "http://localhost:8000";
 
     console.log(copilotAPI);
 
+    const briefContext = promptBrief
+      ? `\nBRIEF STRATÉGIQUE :\n- Titre : ${promptBrief.title}\n- Description : ${promptBrief.description}\n- Instructions clés : ${promptBrief.instructions}\nApplique ces consignes dans chaque format sans les réécrire textuellement, mais en respectant l'intention stratégique.`
+      : "";
+
     const unifiedPrompt = `Tu es un expert en marketing de contenu, copywriting et storytelling visuel. Gère l'ensemble du contenu pour une marque sur le sujet : "${topic}".
 
 STYLE GLOBAL :
-Ton : ${tone}
+Ton : ${promptBrief?.tone ?? tone}
 ${toneInstruction}
-Couleurs de marque : ${primaryColor}, ${secondaryColor}
+Couleurs de marque : ${primaryColor}, ${secondaryColor}${briefContext}
 
 1. 🎯 Post LinkedIn
 Crée un post LinkedIn impactant selon les consignes suivantes :
