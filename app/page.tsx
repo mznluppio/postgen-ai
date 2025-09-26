@@ -14,6 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { PRICING_PLANS } from "@/lib/plans";
 
 const features = [
   {
@@ -57,40 +58,6 @@ const workflow = [
     title: "Publiez, mesurez, itérez",
     description:
       "Planifiez vos publications, analysez les résultats et réutilisez facilement ce qui fonctionne pour booster votre présence.",
-  },
-];
-
-const plans = [
-  {
-    name: "Starter",
-    price: "Gratuit",
-    description: "Idéal pour découvrir Postgen AI et publier vos premiers contenus.",
-    perks: [
-      "Génération de posts illimitée en mode brouillon",
-      "1 organisation et 2 membres inclus",
-      "Bibliothèque de prompts et briefs prêts à l'emploi",
-    ],
-  },
-  {
-    name: "Pro",
-    price: "29€ / mois",
-    description: "Pensé pour les équipes marketing qui publient chaque semaine.",
-    perks: [
-      "Collaborateurs illimités",
-      "Automatisations multi-canales et planification",
-      "Analyses d'engagement et recommandations IA",
-    ],
-    highlight: true,
-  },
-  {
-    name: "Enterprise",
-    price: "Sur mesure",
-    description: "Accompagnement premium pour les marques à forte volumétrie.",
-    perks: [
-      "Support dédié et SLA contractuel",
-      "Espaces sur-mesure et intégrations avancées",
-      "Hébergement souverain et conformité renforcée",
-    ],
   },
 ];
 
@@ -356,9 +323,9 @@ export default function Home() {
               </p>
             </div>
             <div className="mt-12 grid gap-6 lg:grid-cols-3">
-              {plans.map((plan) => (
+              {PRICING_PLANS.map((plan) => (
                 <Card
-                  key={plan.name}
+                  key={plan.id}
                   className={`flex h-full flex-col border ${plan.highlight ? "border-slate-900 shadow-xl shadow-slate-900/10" : "border-border"}`}
                 >
                   <CardHeader>
@@ -377,9 +344,15 @@ export default function Home() {
                         </li>
                       ))}
                     </ul>
-                    {plan.highlight && (
-                      <Button className="mt-8 w-full" asChild>
-                        <Link href="/auth">Choisir le plan Pro</Link>
+                    {plan.cta && (
+                      <Button className="mt-8 w-full" variant={plan.cta.variant} asChild>
+                        {plan.cta.external ? (
+                          <a href={plan.cta.href} target="_blank" rel="noopener noreferrer">
+                            {plan.cta.label}
+                          </a>
+                        ) : (
+                          <Link href={plan.cta.href}>{plan.cta.label}</Link>
+                        )}
                       </Button>
                     )}
                   </CardContent>
