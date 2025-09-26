@@ -17,6 +17,7 @@ import {
   Users,
   Zap,
 } from "lucide-react";
+import { EMAIL_CONTENT_TYPES, buildEmailTypeUrl } from "./email-content";
 
 export interface Organization {
   id: string;
@@ -207,12 +208,11 @@ export const contentCreation: NavigationItem[] = [
     title: "Email Marketing",
     url: "/dashboard/content/email",
     icon: Mail,
-    items: [
-      { title: "Email Campaigns", url: "/content/email/campaigns", icon: Mail },
-      { title: "Newsletter", url: "/content/email/newsletter", icon: Mail },
-      { title: "Drip Sequences", url: "/content/email/sequences", icon: Mail },
-      { title: "Templates", url: "/content/email/templates", icon: Mail },
-    ],
+    items: EMAIL_CONTENT_TYPES.map((emailType) => ({
+      title: emailType.title,
+      url: buildEmailTypeUrl(emailType.id),
+      icon: emailType.icon,
+    })),
   },
 ];
 
