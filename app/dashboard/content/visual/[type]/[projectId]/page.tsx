@@ -49,7 +49,10 @@ import {
 } from "lucide-react";
 
 import { motion } from "framer-motion";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+
+const MotionDiv = motion.div;
 
 export default function VisualContentPage() {
   const { currentOrganization, user } = useAuth();
@@ -297,13 +300,13 @@ export default function VisualContentPage() {
 Génère un contenu de type "${type}" en lien avec ce projet.`;
 
   return (
-    <motion.div
+    <MotionDiv
       className="flex flex-col gap-6 p-4 sm:p-6 max-w-4xl w-full mx-auto"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
     >
-      <motion.div
+      <MotionDiv
         className="space-y-1"
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -321,7 +324,7 @@ Génère un contenu de type "${type}" en lien avec ce projet.`;
         <p className="text-muted-foreground text-sm">
           Créez, copiez et regénérez facilement vos contenus.
         </p>
-      </motion.div>
+      </MotionDiv>
 
       <ContentAutomationControls
         selectedChannels={selectedChannels}
@@ -342,7 +345,7 @@ Génère un contenu de type "${type}" en lien avec ce projet.`;
       <Separator />
 
       {existingContents.length > 0 ? (
-        <motion.div
+        <MotionDiv
           className="space-y-6"
           initial="hidden"
           animate="visible"
@@ -361,7 +364,7 @@ Génère un contenu de type "${type}" en lien avec ce projet.`;
               <h3 className="text-lg font-semibold">Brouillons</h3>
               <div className="grid gap-4">
                 {groupedContents.drafts.map((item, index) => (
-                  <motion.div
+                  <MotionDiv
                     key={item.$id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -419,7 +422,7 @@ Génère un contenu de type "${type}" en lien avec ce projet.`;
                         </Button>
                       </CardFooter>
                     </Card>
-                  </motion.div>
+                  </MotionDiv>
                 ))}
               </div>
             </div>
@@ -427,7 +430,7 @@ Génère un contenu de type "${type}" en lien avec ce projet.`;
 
           <div className="grid gap-6">
             {existingContents.map((item, index) => (
-              <motion.div
+              <MotionDiv
                 key={item.$id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -504,7 +507,7 @@ Génère un contenu de type "${type}" en lien avec ce projet.`;
               <h3 className="text-lg font-semibold">Programmés & publiés</h3>
               <div className="grid gap-4">
                 {groupedContents.others.map((item, index) => (
-                  <motion.div
+                  <MotionDiv
                     key={item.$id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -560,12 +563,12 @@ Génère un contenu de type "${type}" en lien avec ce projet.`;
                         </Button>
                       </CardFooter>
                     </Card>
-                  </motion.div>
+                  </MotionDiv>
                 ))}
               </div>
             </div>
           )}
-        </motion.div>
+        </MotionDiv>
       ) : (
         <div className="flex flex-col items-center justify-center text-center text-muted-foreground py-20">
           <h3 className="text-lg font-semibold">Aucun contenu généré</h3>
@@ -650,6 +653,6 @@ Génère un contenu de type "${type}" en lien avec ce projet.`;
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </motion.div>
+    </MotionDiv>
   );
 }
