@@ -35,6 +35,81 @@ export interface ComplianceConfig {
   requestContactEmail?: string;
 }
 
+export interface IdeaBacklogItem {
+  id: string;
+  topic: string;
+  channel?: string;
+  objective?: string;
+  impact?: "high" | "medium" | "low";
+  effort?: "high" | "medium" | "low";
+  status?: "new" | "in-progress" | "approved" | "published";
+  createdAt: string;
+  updatedAt?: string;
+  tags?: string[];
+}
+
+export type EditorialCalendarStatus =
+  | "draft"
+  | "in-production"
+  | "scheduled"
+  | "published";
+
+export interface EditorialCalendarEntry {
+  id: string;
+  title: string;
+  channel: string;
+  contentType?: string;
+  owner?: string;
+  status: EditorialCalendarStatus;
+  publishDate: string;
+  objective?: string;
+  notes?: string;
+  assets?: string[];
+}
+
+export type BrandGuidelineCategory =
+  | "voice"
+  | "visual"
+  | "messaging"
+  | "campaign"
+  | "compliance"
+  | "other";
+
+export interface BrandGuideline {
+  id: string;
+  title: string;
+  category: BrandGuidelineCategory;
+  description: string;
+  owner?: string;
+  assets?: string[];
+  toneKeywords?: string[];
+  updatedAt: string;
+}
+
+export interface AudiencePersona {
+  id: string;
+  name: string;
+  segment?: string;
+  description?: string;
+  pains?: string[];
+  goals?: string[];
+  preferredChannels?: string[];
+  stage?: "awareness" | "consideration" | "decision" | "retention";
+  notes?: string;
+}
+
+export interface AIModelConfig {
+  id: string;
+  name: string;
+  provider: string;
+  useCase: string;
+  status: "active" | "paused";
+  temperature?: number;
+  maxTokens?: number;
+  lastTrainedAt?: string;
+  instructions?: string;
+}
+
 export interface Organization {
   $id: string;
   name: string;
@@ -47,6 +122,11 @@ export interface Organization {
   teamId?: string;
   supportCenter?: SupportCenterConfig;
   compliance?: ComplianceConfig;
+  ideaBacklog?: IdeaBacklogItem[];
+  editorialCalendar?: EditorialCalendarEntry[];
+  brandGuidelines?: BrandGuideline[];
+  audiencePersonas?: AudiencePersona[];
+  aiModelConfigs?: AIModelConfig[];
 }
 
 export class AuthService {
@@ -186,6 +266,11 @@ export class AuthService {
             complianceArtifacts: [],
             requestContactEmail: "",
           },
+          ideaBacklog: [],
+          editorialCalendar: [],
+          brandGuidelines: [],
+          audiencePersonas: [],
+          aiModelConfigs: [],
         }
       );
 

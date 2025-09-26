@@ -5,6 +5,8 @@ import { Lightbulb, Plus, Target, Trash2, Trophy } from "lucide-react";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { AuthGuard } from "@/components/auth/AuthGuard";
+import { DashboardEditableListSection } from "@/components/dashboard/DashboardEditableListSection";
+import { DashboardStatCard } from "@/components/dashboard/DashboardStatCard";
 import {
   Card,
   CardContent,
@@ -34,6 +36,13 @@ const STATUS_OPTIONS: { value: NonNullable<IdeaBacklogItem["status"]>; label: st
   { value: "approved", label: "Prêtes" },
   { value: "published", label: "Publiées" },
 ];
+
+const STATUS_DESCRIPTIONS: Record<NonNullable<IdeaBacklogItem["status"]>, string> = {
+  new: "Idées à clarifier et prioriser.",
+  "in-progress": "Briefs en cours de structuration.",
+  approved: "Validées pour lancement.",
+  published: "Déjà publiées ou diffusées.",
+};
 
 const IMPACT_LABELS: Record<NonNullable<IdeaBacklogItem["impact"]>, string> = {
   high: "Fort", 
@@ -243,44 +252,26 @@ export default function IdeasBacklogPage() {
         </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total d'idées</CardTitle>
-            <Lightbulb className="h-5 w-5 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{ideas.length}</div>
-            <p className="text-xs text-muted-foreground">
-              {ideas.length ? "Idées enregistrées" : "Ajoutez votre première idée"}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Idées en cours</CardTitle>
-            <Target className="h-5 w-5 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{statusCounts["in-progress"] ?? 0}</div>
-            <p className="text-xs text-muted-foreground">Suivi opérationnel</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Idées prêtes</CardTitle>
-            <Trophy className="h-5 w-5 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{statusCounts["approved"] ?? 0}</div>
-            <p className="text-xs text-muted-foreground">Prêtes à passer en production</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Canaux clés</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <DashboardStatCard
+            title="Total d'idées"
+            value={ideas.length}
+            subtitle={ideas.length ? "Idées enregistrées" : "Ajoutez votre première idée"}
+            icon={Lightbulb}
+          />
+          <DashboardStatCard
+            title="Idées en cours"
+            value={statusCounts["in-progress"] ?? 0}
+            subtitle="Suivi opérationnel"
+            icon={Target}
+          />
+          <DashboardStatCard
+            title="Idées prêtes"
+            value={statusCounts["approved"] ?? 0}
+            subtitle="Prêtes à passer en production"
+            icon={Trophy}
+          />
+          <DashboardStatCard title="Canaux clés">
             {recommendedChannels.length ? (
               <div className="flex flex-wrap gap-2">
                 {recommendedChannels.map((channel) => (
@@ -294,9 +285,8 @@ export default function IdeasBacklogPage() {
                 Aucun canal dominant identifié pour le moment.
               </p>
             )}
-          </CardContent>
-        </Card>
-      </div>
+          </DashboardStatCard>
+        </div>
 
       <Card>
         <CardHeader>
@@ -388,133 +378,126 @@ export default function IdeasBacklogPage() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-4">
-        {STATUS_OPTIONS.map((statusOption) => {
-          const items = ideas.filter((idea) => idea.status === statusOption.value);
-          return (
-            <Card key={statusOption.value} className="flex flex-col">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center justify-between text-base font-semibold">
-                  <span>{statusOption.label}</span>
-                  <Badge variant="outline">{items.length}</Badge>
-                </CardTitle>
-                <CardDescription>
-                  {statusOption.value === "new" && "Idées à clarifier et prioriser."}
-                  {statusOption.value === "in-progress" && "Briefs en cours de structuration."}
-                  {statusOption.value === "approved" && "Validées pour lancement."}
-                  {statusOption.value === "published" && "Déjà publiées ou diffusées."}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4 flex-1">
-                {items.length ? (
-                  items.map((idea) => (
-                    <div key={idea.id} className="rounded-lg border p-4 space-y-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <Input
-                          value={idea.topic}
-                          onChange={(event) => updateIdea(idea.id, "topic", event.target.value)}
-                        />
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-muted-foreground hover:text-destructive"
-                          onClick={() => removeIdea(idea.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+        <div className="grid gap-6 lg:grid-cols-4">
+          {STATUS_OPTIONS.map((statusOption) => {
+            const items = ideas.filter((idea) => idea.status === statusOption.value);
+            return (
+              <DashboardEditableListSection
+                key={statusOption.value}
+                title={statusOption.label}
+                description={STATUS_DESCRIPTIONS[statusOption.value]}
+                items={items}
+                getItemKey={(idea) => idea.id}
+                itemClassName="space-y-3"
+                emptyState={
+                  <p className="text-sm text-muted-foreground">
+                    Aucune idée dans cette étape pour le moment.
+                  </p>
+                }
+                renderItem={(idea) => (
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <Input
+                        value={idea.topic}
+                        onChange={(event) => updateIdea(idea.id, "topic", event.target.value)}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-muted-foreground hover:text-destructive"
+                        onClick={() => removeIdea(idea.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                        <span>
+                          Créée le {new Date(idea.createdAt).toLocaleDateString("fr-FR")}
+                        </span>
+                        {idea.objective ? (
+                          <Badge variant="secondary">Objectif défini</Badge>
+                        ) : null}
                       </div>
-                      <div className="space-y-2">
-                        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                          <span>Créée le {new Date(idea.createdAt).toLocaleDateString("fr-FR")}</span>
-                          {idea.objective ? (
-                            <Badge variant="secondary">Objectif défini</Badge>
-                          ) : null}
-                        </div>
-                        <Label className="text-xs text-muted-foreground">Canal</Label>
-                        <Input
-                          value={idea.channel ?? ""}
-                          onChange={(event) => updateIdea(idea.id, "channel", event.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs text-muted-foreground">Objectif</Label>
-                        <Textarea
-                          value={idea.objective ?? ""}
-                          rows={3}
-                          placeholder="Décrire l'angle ou le résultat attendu"
-                          onChange={(event) => updateIdea(idea.id, "objective", event.target.value)}
-                        />
-                      </div>
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <div className="space-y-1">
-                          <Label className="text-xs text-muted-foreground">Impact</Label>
-                          <Select
-                            value={idea.impact ?? "medium"}
-                            onValueChange={(value: NonNullable<IdeaBacklogItem["impact"]>) =>
-                              updateIdea(idea.id, "impact", value)
-                            }
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="high">{IMPACT_LABELS.high}</SelectItem>
-                              <SelectItem value="medium">{IMPACT_LABELS.medium}</SelectItem>
-                              <SelectItem value="low">{IMPACT_LABELS.low}</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs text-muted-foreground">Effort</Label>
-                          <Select
-                            value={idea.effort ?? "medium"}
-                            onValueChange={(value: NonNullable<IdeaBacklogItem["effort"]>) =>
-                              updateIdea(idea.id, "effort", value)
-                            }
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="low">{EFFORT_LABELS.low}</SelectItem>
-                              <SelectItem value="medium">{EFFORT_LABELS.medium}</SelectItem>
-                              <SelectItem value="high">{EFFORT_LABELS.high}</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs text-muted-foreground">Statut</Label>
+                      <Label className="text-xs text-muted-foreground">Canal</Label>
+                      <Input
+                        value={idea.channel ?? ""}
+                        onChange={(event) => updateIdea(idea.id, "channel", event.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground">Objectif</Label>
+                      <Textarea
+                        value={idea.objective ?? ""}
+                        rows={3}
+                        placeholder="Décrire l'angle ou le résultat attendu"
+                        onChange={(event) => updateIdea(idea.id, "objective", event.target.value)}
+                      />
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Impact</Label>
                         <Select
-                          value={idea.status ?? "new"}
-                          onValueChange={(value: NonNullable<IdeaBacklogItem["status"]>) =>
-                            updateIdea(idea.id, "status", value)
+                          value={idea.impact ?? "medium"}
+                          onValueChange={(value: NonNullable<IdeaBacklogItem["impact"]>) =>
+                            updateIdea(idea.id, "impact", value)
                           }
                         >
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {STATUS_OPTIONS.map((option) => (
-                              <SelectItem key={option.value} value={option.value}>
-                                {option.label}
-                              </SelectItem>
-                            ))}
+                            <SelectItem value="high">{IMPACT_LABELS.high}</SelectItem>
+                            <SelectItem value="medium">{IMPACT_LABELS.medium}</SelectItem>
+                            <SelectItem value="low">{IMPACT_LABELS.low}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Effort</Label>
+                        <Select
+                          value={idea.effort ?? "medium"}
+                          onValueChange={(value: NonNullable<IdeaBacklogItem["effort"]>) =>
+                            updateIdea(idea.id, "effort", value)
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="low">{EFFORT_LABELS.low}</SelectItem>
+                            <SelectItem value="medium">{EFFORT_LABELS.medium}</SelectItem>
+                            <SelectItem value="high">{EFFORT_LABELS.high}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                     </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Aucune idée dans cette étape pour le moment.
-                  </p>
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground">Statut</Label>
+                      <Select
+                        value={idea.status ?? "new"}
+                        onValueChange={(value: NonNullable<IdeaBacklogItem["status"]>) =>
+                          updateIdea(idea.id, "status", value)
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {STATUS_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                 )}
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+              />
+            );
+          })}
+        </div>
 
       {prioritizedIdeas.length ? (
         <Card>
