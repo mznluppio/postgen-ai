@@ -106,12 +106,12 @@ export const mainNavigation: NavigationItem[] = [
   },
   {
     title: "Content Library",
-    url: "/library",
+    url: "/dashboard/library",
     icon: FolderOpen,
   },
   {
     title: "Analytics",
-    url: "/analytics",
+    url: "/dashboard/analytics",
     icon: BarChart3,
   },
 ];
