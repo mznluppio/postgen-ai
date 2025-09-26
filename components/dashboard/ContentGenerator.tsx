@@ -95,7 +95,16 @@ export default function ContentGenerator({
     const isSocial = socialTypes.includes(typeLower);
 
     // Types d'email
-    const emailTypes = ["email", "newsletter"];
+    const emailTypes = [
+      "email",
+      "newsletter",
+      "campaign",
+      "campaigns",
+      "sequence",
+      "sequences",
+      "template",
+      "templates",
+    ];
     const isEmail = emailTypes.includes(typeLower);
 
     // Types d'articles
