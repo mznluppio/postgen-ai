@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ID, Storage } from "appwrite";
 
 import { useAuth } from "@/contexts/AuthContext";
@@ -17,6 +17,16 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import AuthPage from "@/app/auth/page";
 import { client } from "@/lib/appwrite-config";
 import { useOrganizationMembers } from "@/hooks/useOrganizationMembers";
@@ -27,16 +37,64 @@ const storage = new Storage(client);
 export default function OrganizationSettingsPage() {
   const { currentOrganization, updateCurrentOrganization, refreshUser } =
     useAuth();
-  const [name, setName] = useState(currentOrganization?.name || "");
-  const [description, setDescription] = useState(
-    currentOrganization?.description || "",
-  );
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [upgradeLoading, setUpgradeLoading] = useState(false);
   const [upgradeSuccess, setUpgradeSuccess] = useState(false);
   const [upgradeError, setUpgradeError] = useState<string | null>(null);
+  const [priorityEmail, setPriorityEmail] = useState("");
+  const [priorityPhone, setPriorityPhone] = useState("");
+  const [slackChannel, setSlackChannel] = useState("");
+  const [slaTier, setSlaTier] = useState("");
+  const [slaDocumentUrl, setSlaDocumentUrl] = useState("");
+  const [ticketPortalUrl, setTicketPortalUrl] = useState("");
+  const [supportLoading, setSupportLoading] = useState(false);
+  const [supportSuccess, setSupportSuccess] = useState(false);
+  const [supportError, setSupportError] = useState<string | null>(null);
+  const [dataRegions, setDataRegions] = useState<string[]>([]);
+  const [preferredRegion, setPreferredRegion] = useState("eu");
+  const [allowCustomRegion, setAllowCustomRegion] = useState(false);
+  const [complianceArtifacts, setComplianceArtifacts] = useState("");
+  const [complianceContact, setComplianceContact] = useState("");
+  const [complianceLoading, setComplianceLoading] = useState(false);
+  const [complianceSuccess, setComplianceSuccess] = useState(false);
+  const [complianceError, setComplianceError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!currentOrganization) return;
+
+    setName(currentOrganization.name || "");
+    setDescription(currentOrganization.description || "");
+    setPriorityEmail(currentOrganization.supportCenter?.priorityEmail || "");
+    setPriorityPhone(currentOrganization.supportCenter?.priorityPhone || "");
+    setSlackChannel(currentOrganization.supportCenter?.slackChannel || "");
+    setSlaTier(currentOrganization.supportCenter?.slaTier || "");
+    setSlaDocumentUrl(
+      currentOrganization.supportCenter?.slaDocumentUrl || "",
+    );
+    setTicketPortalUrl(
+      currentOrganization.supportCenter?.ticketPortalUrl || "",
+    );
+
+    const regions = currentOrganization.compliance?.dataRegions || ["eu"];
+    setDataRegions(regions);
+    setPreferredRegion(
+      currentOrganization.compliance?.preferredDataRegion || regions[0] || "eu",
+    );
+    setAllowCustomRegion(
+      currentOrganization.compliance?.allowCustomRegion ??
+        currentOrganization.plan === "enterprise",
+    );
+    setComplianceArtifacts(
+      (currentOrganization.compliance?.complianceArtifacts || []).join("\n"),
+    );
+    setComplianceContact(
+      currentOrganization.compliance?.requestContactEmail || "",
+    );
+  }, [currentOrganization]);
 
   const handleTeamResolved = useCallback(async () => {
     await refreshUser();
@@ -100,9 +158,73 @@ export default function OrganizationSettingsPage() {
     }
   };
 
+  const availableRegions = [
+    { value: "eu", label: "Union européenne (EU)" },
+    { value: "us", label: "Amérique du Nord (US)" },
+    { value: "apac", label: "Asie-Pacifique (APAC)" },
+  ];
+
+  const handleSupportSubmit = async () => {
+    setSupportLoading(true);
+    setSupportSuccess(false);
+    setSupportError(null);
+
+    try {
+      await updateCurrentOrganization({
+        supportCenter: {
+          priorityEmail,
+          priorityPhone,
+          slackChannel,
+          slaTier,
+          slaDocumentUrl,
+          ticketPortalUrl,
+        },
+      });
+      setSupportSuccess(true);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Erreur inconnue";
+      setSupportError(message);
+    } finally {
+      setSupportLoading(false);
+    }
+  };
+
+  const handleComplianceSubmit = async () => {
+    setComplianceLoading(true);
+    setComplianceSuccess(false);
+    setComplianceError(null);
+
+    try {
+      const normalizedRegions =
+        dataRegions.length > 0 ? dataRegions : [preferredRegion];
+      const regionsSet = new Set([...normalizedRegions, preferredRegion]);
+      const artifacts = complianceArtifacts
+        .split("\n")
+        .map((value) => value.trim())
+        .filter(Boolean);
+
+      await updateCurrentOrganization({
+        compliance: {
+          dataRegions: Array.from(regionsSet),
+          preferredDataRegion: preferredRegion,
+          allowCustomRegion,
+          complianceArtifacts: artifacts,
+          requestContactEmail: complianceContact,
+        },
+      });
+      setComplianceSuccess(true);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Erreur inconnue";
+      setComplianceError(message);
+    } finally {
+      setComplianceLoading(false);
+    }
+  };
+
   const nextPlan = currentOrganization
     ? getNextPlan(currentOrganization.plan)
     : null;
+  const isEnterprise = currentOrganization?.plan === "enterprise";
 
   const handleUpgrade = async () => {
     if (!currentOrganization || !nextPlan) return;
@@ -184,6 +306,277 @@ export default function OrganizationSettingsPage() {
               Modifications enregistrées avec succès.
             </p>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Support &amp; SLA Enterprise</CardTitle>
+          <CardDescription>
+            Définissez vos canaux de support prioritaire et partagez vos
+            engagements de service avec les équipes internes.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {!isEnterprise && (
+            <div className="rounded-md border border-dashed border-purple-200 bg-purple-50/40 p-4 text-sm text-purple-800">
+              <Badge variant="secondary" className="mr-2 uppercase">
+                Enterprise
+              </Badge>
+              Ces options sont disponibles avec le plan Enterprise. Passez au
+              plan supérieur pour activer les canaux de support dédiés et les
+              engagements SLA personnalisés.
+            </div>
+          )}
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="priority-email">Email prioritaire</Label>
+                <Input
+                  id="priority-email"
+                  type="email"
+                  value={priorityEmail}
+                  onChange={(e) => setPriorityEmail(e.target.value)}
+                  placeholder="enterprise-support@postgen.ai"
+                  disabled={!isEnterprise}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="priority-phone">Ligne directe</Label>
+                <Input
+                  id="priority-phone"
+                  value={priorityPhone}
+                  onChange={(e) => setPriorityPhone(e.target.value)}
+                  placeholder="+33 1 86 22 00 00"
+                  disabled={!isEnterprise}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="support-slack">Canal Slack / Teams</Label>
+                <Input
+                  id="support-slack"
+                  value={slackChannel}
+                  onChange={(e) => setSlackChannel(e.target.value)}
+                  placeholder="#postgen-enterprise"
+                  disabled={!isEnterprise}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="support-sla-tier">Niveau d'engagement SLA</Label>
+                <Input
+                  id="support-sla-tier"
+                  value={slaTier}
+                  onChange={(e) => setSlaTier(e.target.value)}
+                  placeholder="Temps de réponse 1h / résolution 4h"
+                  disabled={!isEnterprise}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="support-sla-document">Document SLA</Label>
+                <Input
+                  id="support-sla-document"
+                  type="url"
+                  value={slaDocumentUrl}
+                  onChange={(e) => setSlaDocumentUrl(e.target.value)}
+                  placeholder="https://docs.postgen.ai/sla.pdf"
+                  disabled={!isEnterprise}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Ajoutez un lien vers votre contrat de niveau de service ou un
+                  dossier partagé.
+                </p>
+              </div>
+
+              <div>
+                <Label htmlFor="support-ticket-portal">
+                  Portail de tickets prioritaire
+                </Label>
+                <Input
+                  id="support-ticket-portal"
+                  type="url"
+                  value={ticketPortalUrl}
+                  onChange={(e) => setTicketPortalUrl(e.target.value)}
+                  placeholder="https://support.postgen.ai/enterprise"
+                  disabled={!isEnterprise}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Cette URL sera affichée dans le centre de support Enterprise.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Button
+              onClick={handleSupportSubmit}
+              disabled={supportLoading || !isEnterprise}
+            >
+              {supportLoading
+                ? "Enregistrement..."
+                : "Enregistrer la configuration du support"}
+            </Button>
+            {supportSuccess && (
+              <p className="text-sm text-green-600">
+                Canaux de support mis à jour avec succès.
+              </p>
+            )}
+            {supportError && (
+              <p className="text-sm text-red-600">{supportError}</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Hébergement &amp; conformité</CardTitle>
+          <CardDescription>
+            Contrôlez la région d'hébergement des données et documentez les
+            artefacts de conformité disponibles pour vos équipes.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid gap-6 lg:grid-cols-2">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Région de données préférée</Label>
+                <Select
+                  value={preferredRegion}
+                  onValueChange={setPreferredRegion}
+                  disabled={!isEnterprise}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionnez une région" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableRegions.map((region) => (
+                      <SelectItem key={region.value} value={region.value}>
+                        {region.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Régions activées</Label>
+                <div className="space-y-3 rounded-md border p-4">
+                  {availableRegions.map((region) => (
+                    <div key={region.value} className="flex items-center gap-2">
+                      <Checkbox
+                        id={`region-${region.value}`}
+                        checked={dataRegions.includes(region.value)}
+                        onCheckedChange={(checked) => {
+                          if (!isEnterprise) return;
+                          setDataRegions((prev) => {
+                            if (checked) {
+                              if (prev.includes(region.value)) return prev;
+                              return [...prev, region.value];
+                            }
+                            const next = prev.filter(
+                              (item) => item !== region.value,
+                            );
+                            return next.length > 0 ? next : prev;
+                          });
+                        }}
+                        disabled={!isEnterprise}
+                      />
+                      <Label
+                        htmlFor={`region-${region.value}`}
+                        className="text-sm font-normal"
+                      >
+                        {region.label}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-start justify-between gap-4 rounded-md border p-4">
+                <div>
+                  <p className="text-sm font-medium">
+                    Régions personnalisées sur demande
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Permettre aux clients Enterprise de demander une région
+                    dédiée ou souveraine.
+                  </p>
+                </div>
+                <Switch
+                  checked={allowCustomRegion}
+                  onCheckedChange={(checked) =>
+                    setAllowCustomRegion(Boolean(checked))
+                  }
+                  disabled={!isEnterprise}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="compliance-artifacts">
+                  Artefacts de conformité disponibles
+                </Label>
+                <Textarea
+                  id="compliance-artifacts"
+                  value={complianceArtifacts}
+                  onChange={(e) => setComplianceArtifacts(e.target.value)}
+                  placeholder={
+                    "ISO 27001\nRapport SOC 2\nPreuve RGPD hébergement EU"
+                  }
+                  disabled={!isEnterprise}
+                  className="min-h-[140px]"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Séparez chaque document ou ressource sur une nouvelle ligne.
+                </p>
+              </div>
+
+              <div>
+                <Label htmlFor="compliance-contact">
+                  Contact conformité / sécurité
+                </Label>
+                <Input
+                  id="compliance-contact"
+                  type="email"
+                  value={complianceContact}
+                  onChange={(e) => setComplianceContact(e.target.value)}
+                  placeholder="compliance@postgen.ai"
+                  disabled={!isEnterprise}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Cet email apparaîtra dans le centre de support pour les
+                  demandes d'audit ou de due diligence.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Button
+              onClick={handleComplianceSubmit}
+              disabled={complianceLoading || !isEnterprise}
+            >
+              {complianceLoading
+                ? "Enregistrement..."
+                : "Enregistrer les options de conformité"}
+            </Button>
+            {complianceSuccess && (
+              <p className="text-sm text-green-600">
+                Paramètres de conformité mis à jour.
+              </p>
+            )}
+            {complianceError && (
+              <p className="text-sm text-red-600">{complianceError}</p>
+            )}
+          </div>
         </CardContent>
       </Card>
 

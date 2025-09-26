@@ -12,6 +12,7 @@ import {
   Mail,
   MessageSquare,
   Palette,
+  LifeBuoy,
   Settings,
   Users,
   Zap,
@@ -253,5 +254,10 @@ export const organizationSettings: NavigationItem[] = [
     title: "Integrations",
     url: "/dashboard/settings/integrations",
     icon: Settings,
+  },
+  {
+    title: "Support Center",
+    url: "/dashboard/support",
+    icon: LifeBuoy,
   },
 ];
