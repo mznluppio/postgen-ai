@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import {
@@ -31,6 +32,7 @@ import {
 import { CreateOrganizationDialog } from "@/components/dashboard/CreateOrganizationDialog";
 import AuthPage from "../auth/page";
 import { useEngagementInsights } from "@/hooks/useEngagementInsights";
+import { useAnalyticsAvailability } from "@/hooks/useAnalyticsAvailability";
 import { AnalyticsSummaryCards } from "@/components/dashboard/AnalyticsSummaryCards";
 import { EngagementPerformanceChart } from "@/components/dashboard/EngagementPerformanceChart";
 import { TopContentTable } from "@/components/dashboard/TopContentTable";
@@ -46,6 +48,12 @@ export default function Dashboard() {
     planDetails,
     analyticsSummary,
   } = useEngagementInsights();
+  const {
+    hasAnalyticsAccess,
+    loading: loadingIntegrations,
+    error: integrationsError,
+    requiredIntegrationLabels,
+  } = useAnalyticsAvailability();
   const [recommendations, setRecommendations] = useState<string[]>([]);
   const [loadingRecommendations, setLoadingRecommendations] = useState(false);
   const [recommendationError, setRecommendationError] = useState<string | null>(
@@ -147,7 +155,7 @@ export default function Dashboard() {
         </Button>
       </div>
 
-      {metricsError && (
+      {metricsError && hasAnalyticsAccess && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Erreur de métriques</AlertTitle>
@@ -155,58 +163,96 @@ export default function Dashboard() {
         </Alert>
       )}
 
-      <AnalyticsSummaryCards cards={insights?.summaryCards ?? []} />
+      {integrationsError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Impossible de charger les intégrations</AlertTitle>
+          <AlertDescription>{integrationsError}</AlertDescription>
+        </Alert>
+      )}
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <EngagementPerformanceChart
-          data={insights?.timeseries ?? []}
-          loading={loadingMetrics}
-        />
+      {loadingIntegrations ? (
+        <div className="flex items-center gap-2 rounded-lg border bg-card p-6 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span>Vérification des intégrations…</span>
+        </div>
+      ) : hasAnalyticsAccess ? (
+        <>
+          <AnalyticsSummaryCards cards={insights?.summaryCards ?? []} />
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Objectifs du plan {planDetails?.name}</CardTitle>
-            <CardDescription>
-              Comparez vos performances hebdomadaires aux repères du plan.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div>
-              <div className="flex items-center justify-between text-sm font-medium">
-                <span>Vues hebdomadaires</span>
-                <span>
-                  {benchmark ? numberFormatter.format(benchmark.currentWeeklyViews) : 0}
-                  <span className="text-muted-foreground">
-                    {" "}/ {numberFormatter.format(benchmark?.weeklyViewTarget ?? 0)}
-                  </span>
-                </span>
-              </div>
-              <Progress value={weeklyProgress} className="mt-2" />
+          <div className="grid gap-4 lg:grid-cols-3">
+            <EngagementPerformanceChart
+              data={insights?.timeseries ?? []}
+              loading={loadingMetrics}
+            />
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Objectifs du plan {planDetails?.name}</CardTitle>
+                <CardDescription>
+                  Comparez vos performances hebdomadaires aux repères du plan.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div>
+                  <div className="flex items-center justify-between text-sm font-medium">
+                    <span>Vues hebdomadaires</span>
+                    <span>
+                      {benchmark ? numberFormatter.format(benchmark.currentWeeklyViews) : 0}
+                      <span className="text-muted-foreground">
+                        {" "}/ {numberFormatter.format(benchmark?.weeklyViewTarget ?? 0)}
+                      </span>
+                    </span>
+                  </div>
+                  <Progress value={weeklyProgress} className="mt-2" />
+                </div>
+                <div>
+                  <div className="flex items-center justify-between text-sm font-medium">
+                    <span>Taux d'engagement</span>
+                    <span>
+                      {benchmark ? `${benchmark.currentEngagementRate}%` : "0%"}
+                      <span className="text-muted-foreground">
+                        {" "}/ {benchmark ? `${benchmark.engagementRateTarget}%` : "0%"}
+                      </span>
+                    </span>
+                  </div>
+                  <Progress value={engagementProgress} className="mt-2" />
+                </div>
+                {planDetails?.price && (
+                  <div className="rounded-md bg-muted p-3 text-sm text-muted-foreground">
+                    <p>
+                      Profitez d'un suivi personnalisé et d'objectifs adaptés à votre plan {planDetails.name}.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          <TopContentTable
+            items={insights?.topContent ?? []}
+            loading={loadingMetrics}
+          />
+        </>
+      ) : (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Activez l'analytics</AlertTitle>
+          <AlertDescription>
+            <div className="flex flex-col gap-2">
+              <span>
+                Connectez au moins une intégration ({requiredIntegrationLabels.join(", ")})
+                pour débloquer les métriques.
+              </span>
+              <Button asChild variant="outline" size="sm" className="w-fit">
+                <Link href="/dashboard/settings/integrations">
+                  Configurer les intégrations
+                </Link>
+              </Button>
             </div>
-            <div>
-              <div className="flex items-center justify-between text-sm font-medium">
-                <span>Taux d'engagement</span>
-                <span>
-                  {benchmark ? `${benchmark.currentEngagementRate}%` : "0%"}
-                  <span className="text-muted-foreground">
-                    {" "}/ {benchmark ? `${benchmark.engagementRateTarget}%` : "0%"}
-                  </span>
-                </span>
-              </div>
-              <Progress value={engagementProgress} className="mt-2" />
-            </div>
-            {planDetails?.price && (
-              <div className="rounded-md bg-muted p-3 text-sm text-muted-foreground">
-                <p>
-                  {planDetails.name} · {planDetails.price}
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      <TopContentTable items={insights?.topContent ?? []} loading={loadingMetrics} />
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
@@ -220,7 +266,11 @@ export default function Dashboard() {
             variant="outline"
             size="sm"
             onClick={handleGenerateRecommendations}
-            disabled={loadingRecommendations || !insights?.metrics?.length}
+            disabled={
+              loadingRecommendations ||
+              !hasAnalyticsAccess ||
+              !insights?.metrics?.length
+            }
           >
             {loadingRecommendations ? (
               <>
@@ -236,7 +286,11 @@ export default function Dashboard() {
           </Button>
         </CardHeader>
         <CardContent>
-          {!insights?.metrics?.length ? (
+          {!hasAnalyticsAccess ? (
+            <p className="text-sm text-muted-foreground">
+              Activez l'analytics en connectant vos intégrations pour obtenir des recommandations exploitables.
+            </p>
+          ) : !insights?.metrics?.length ? (
             <p className="text-sm text-muted-foreground">
               Publiez du contenu et revenez pour obtenir des recommandations personnalisées.
             </p>
