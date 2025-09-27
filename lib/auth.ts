@@ -9,6 +9,53 @@ import { ID, Query } from "appwrite";
 import type { Models } from "appwrite";
 import { getPlanLimit } from "./plans";
 
+export interface CommunicationPreferences {
+  productUpdates: boolean;
+  weeklySummary: boolean;
+  securityAlerts: boolean;
+}
+
+export interface BillingContact {
+  companyName?: string;
+  contactName?: string;
+  email?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  postalCode?: string;
+  country?: string;
+  vatNumber?: string;
+  purchaseOrder?: string;
+}
+
+export interface PaymentMethodDetails {
+  brand: string;
+  last4: string;
+  expMonth: number;
+  expYear: number;
+  isDefault?: boolean;
+}
+
+export type InvoiceStatus = "paid" | "due" | "failed" | "void";
+
+export interface InvoiceRecord {
+  id: string;
+  label: string;
+  amount: number;
+  currency: string;
+  status: InvoiceStatus;
+  issuedAt: string;
+  downloadUrl?: string;
+}
+
+export interface BillingSettings {
+  billingEmail?: string;
+  contact?: BillingContact;
+  paymentMethod?: PaymentMethodDetails | null;
+  planRenewalDate?: string;
+  invoices?: InvoiceRecord[];
+}
+
 export interface User {
   $id: string;
   name: string;
@@ -16,6 +63,9 @@ export interface User {
   avatar?: string;
   organizations: string[];
   currentOrganization?: string;
+  language?: string;
+  timezone?: string;
+  communicationPreferences?: CommunicationPreferences;
 }
 
 export interface SupportCenterConfig {
@@ -127,6 +177,7 @@ export interface Organization {
   brandGuidelines?: BrandGuideline[];
   audiencePersonas?: AudiencePersona[];
   aiModelConfigs?: AIModelConfig[];
+  billing?: BillingSettings;
 }
 
 export class AuthService {
@@ -197,6 +248,13 @@ export class AuthService {
         {
           ...data,
           createdAt: new Date().toISOString(),
+          language: "fr",
+          timezone: "Europe/Paris",
+          communicationPreferences: {
+            productUpdates: true,
+            weeklySummary: true,
+            securityAlerts: true,
+          },
         }
       );
     } catch (error) {
@@ -265,6 +323,19 @@ export class AuthService {
             allowCustomRegion: plan === "enterprise",
             complianceArtifacts: [],
             requestContactEmail: "",
+          },
+          billing: {
+            billingEmail: user.email,
+            contact: {
+              companyName: name,
+              contactName: user.name,
+              email: user.email,
+            },
+            paymentMethod: null,
+            planRenewalDate: new Date(
+              Date.now() + 30 * 24 * 60 * 60 * 1000,
+            ).toISOString(),
+            invoices: [],
           },
           ideaBacklog: [],
           editorialCalendar: [],

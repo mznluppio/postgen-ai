@@ -9,10 +9,12 @@ import {
   Home,
   ImageIcon,
   Lightbulb,
+  CreditCard,
+  Plug,
+  UserCog,
   Mail,
   MessageSquare,
   Palette,
-  LifeBuoy,
   Settings,
   Users,
   Zap,
@@ -259,6 +261,16 @@ export const managementTools: NavigationItem[] = [
 
 export const organizationSettings: NavigationItem[] = [
   {
+    title: "Vue d'ensemble",
+    url: "/dashboard/settings",
+    icon: Settings,
+  },
+  {
+    title: "Paramètres du compte",
+    url: "/dashboard/settings/account",
+    icon: UserCog,
+  },
+  {
     title: "Organization Settings",
     url: "/dashboard/settings/organization",
     icon: Building2,
@@ -269,13 +281,13 @@ export const organizationSettings: NavigationItem[] = [
     icon: Users,
   },
   {
-    title: "Integrations",
-    url: "/dashboard/settings/integrations",
-    icon: Settings,
+    title: "Abonnement & Facturation",
+    url: "/dashboard/settings/billing",
+    icon: CreditCard,
   },
   {
-    title: "Support Center",
-    url: "/dashboard/support",
-    icon: LifeBuoy,
+    title: "Integrations",
+    url: "/dashboard/settings/integrations",
+    icon: Plug,
   },
 ];
