@@ -5,6 +5,9 @@ import Link from "next/link";
 import {
   CloudCog,
   FileText,
+  Instagram,
+  Linkedin,
+  Mail,
   MessagesSquare,
   Share2,
   Workflow,
@@ -51,6 +54,33 @@ interface IntegrationDefinition {
 }
 
 const INTEGRATIONS: IntegrationDefinition[] = [
+  {
+    id: "linkedin",
+    name: "LinkedIn",
+    description:
+      "Connectez votre application LinkedIn pour programmer vos publications et suivre les statistiques d'engagement.",
+    minimumPlan: "starter",
+    docsUrl: "https://learn.microsoft.com/linkedin/shared/authentication/client-credentials-flow",
+    Icon: Linkedin,
+  },
+  {
+    id: "instagram",
+    name: "Instagram",
+    description:
+      "Ajoutez votre application Instagram Graph afin de diffuser vos posts et récupérer les performances.",
+    minimumPlan: "starter",
+    docsUrl: "https://developers.facebook.com/docs/instagram-api/getting-started",
+    Icon: Instagram,
+  },
+  {
+    id: "email",
+    name: "E-mail (SMTP)",
+    description:
+      "Renseignez les identifiants SMTP de votre routeur d'e-mails pour l'envoi automatisé et le suivi des campagnes.",
+    minimumPlan: "starter",
+    docsUrl: "https://www.rfc-editor.org/rfc/rfc4954",
+    Icon: Mail,
+  },
   {
     id: "notion",
     name: "Notion",
