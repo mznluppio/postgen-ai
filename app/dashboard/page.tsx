@@ -8,6 +8,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -123,6 +124,12 @@ export default function Dashboard() {
   const support = currentOrganization.supportCenter;
   const compliance = currentOrganization.compliance;
   const isEnterprise = currentOrganization.plan === "enterprise";
+
+  const integrationRequirementText = formatList(
+    (missingIntegrationLabels?.length ?? 0) > 0
+      ? missingIntegrationLabels ?? []
+      : requiredIntegrationLabels ?? [],
+  );
 
   const benchmark = insights?.planBenchmark;
   const weeklyProgress = benchmark?.weeklyViewTarget
@@ -423,9 +430,4 @@ export default function Dashboard() {
     </div>
   );
 }
-  const integrationRequirementText = formatList(
-    missingIntegrationLabels.length
-      ? missingIntegrationLabels
-      : requiredIntegrationLabels,
-  );
 
