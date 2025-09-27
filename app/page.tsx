@@ -61,6 +61,39 @@ const workflow = [
   },
 ];
 
+const heroStats = [
+  {
+    label: "Temps moyen gagné",
+    value: "6h / semaine",
+    description: "grâce à l'automatisation des briefs et validations.",
+  },
+  {
+    label: "Satisfaction des équipes",
+    value: "94%",
+    description: "des utilisateurs constatent une meilleure cohérence éditoriale.",
+  },
+  {
+    label: "Vitesse de publication",
+    value: "x4",
+    description: "de posts déployés sur vos réseaux préférés.",
+  },
+];
+
+const reliabilityHighlights = [
+  {
+    icon: ShieldCheck,
+    text: "Données hébergées en Europe et chiffrées de bout en bout.",
+  },
+  {
+    icon: Layers,
+    text: "Intégration native avec vos outils : Notion, HubSpot, Slack, Zapier.",
+  },
+  {
+    icon: Clock3,
+    text: "Support en français disponible en moins de 5 minutes ouvrées.",
+  },
+];
+
 export default function Home() {
   const { user, loading } = useAuth();
   const router = useRouter();
@@ -145,45 +178,19 @@ export default function Home() {
                 </Button>
               </div>
               <div className="mt-12 grid gap-6 md:grid-cols-3">
-                <Card className="bg-white/5 border-white/10 text-white">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-slate-200">
-                      Temps moyen gagné
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-3xl font-semibold">6h / semaine</p>
-                    <p className="text-sm text-slate-300">
-                      grâce à l'automatisation des briefs et validations.
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-white/5 border-white/10 text-white">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-slate-200">
-                      Satisfaction des équipes
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-3xl font-semibold">94%</p>
-                    <p className="text-sm text-slate-300">
-                      des utilisateurs constatent une meilleure cohérence éditoriale.
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-white/5 border-white/10 text-white">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-slate-200">
-                      Vitesse de publication
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-3xl font-semibold">x4</p>
-                    <p className="text-sm text-slate-300">
-                      de posts déployés sur vos réseaux préférés.
-                    </p>
-                  </CardContent>
-                </Card>
+                {heroStats.map((stat) => (
+                  <Card key={stat.label} className="bg-white/5 border-white/10 text-white">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-slate-200">
+                        {stat.label}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-3xl font-semibold">{stat.value}</p>
+                      <p className="text-sm text-slate-300">{stat.description}</p>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             </div>
           </div>
@@ -274,18 +281,12 @@ export default function Home() {
                 Clara, Head of Content chez NovaTech, pilote une équipe de 6 créateurs. Avec Postgen AI, elle collabore sur un même calendrier éditorial, valide les contenus en quelques clics et mesure l'impact sans multiplier les outils.
               </p>
               <div className="mt-8 flex flex-col gap-3 text-sm text-muted-foreground">
-                <div className="flex items-center gap-3">
-                  <ShieldCheck className="h-5 w-5 text-slate-700" />
-                  Données hébergées en Europe et chiffrées de bout en bout.
-                </div>
-                <div className="flex items-center gap-3">
-                  <Layers className="h-5 w-5 text-slate-700" />
-                  Intégration native avec vos outils : Notion, HubSpot, Slack, Zapier.
-                </div>
-                <div className="flex items-center gap-3">
-                  <Clock3 className="h-5 w-5 text-slate-700" />
-                  Support en français disponible en moins de 5 minutes ouvrées.
-                </div>
+                {reliabilityHighlights.map((item) => (
+                  <div key={item.text} className="flex items-center gap-3">
+                    <item.icon className="h-5 w-5 text-slate-700" />
+                    {item.text}
+                  </div>
+                ))}
               </div>
             </div>
             <Card className="border-primary/20 shadow-lg shadow-slate-900/5">

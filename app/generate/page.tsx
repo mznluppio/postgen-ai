@@ -11,28 +11,23 @@ import {
   RefreshCw,
   Instagram,
   Linkedin,
-  ArrowLeft,
   CheckCircle,
   Search,
   Sparkles,
   Eye,
   Hash,
   ArrowUpLeft,
-  Palette,
-  Image as ImageIcon,
-  Layout,
   FileText,
   Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { BrandCarousel } from "@/components/ui/brand-carousel";
 import { BackgroundBeams } from "@/components/ui/background-beams";
 import { Spotlight } from "@/components/ui/spotlight";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
@@ -119,7 +114,6 @@ export default function Generate() {
   const [copiedItem, setCopiedItem] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("posts");
   const [isVisible, setIsVisible] = useState(false);
-  const [currentSuggestion, setCurrentSuggestion] = useState(0);
   const [selectedPromptId, setSelectedPromptId] = useState<string>("");
 
   const selectedPrompt = useMemo(
@@ -129,10 +123,6 @@ export default function Generate() {
 
   useEffect(() => {
     setIsVisible(true);
-    const interval = setInterval(() => {
-      setCurrentSuggestion((prev) => (prev + 1) % suggestions.length);
-    }, 3000);
-    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -223,10 +213,6 @@ export default function Generate() {
     }
   };
 
-  const selectSuggestion = (suggestion: string) => {
-    setTopic(suggestion);
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     generateContent();
@@ -239,384 +225,355 @@ export default function Generate() {
         <BackgroundBeams />
 
         <div className="relative z-10 container mx-auto px-4 py-12">
-          {/* Header */}
-          <div className={`mb-12 transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
-            <div className="inline-flex items-center space-x-3 mb-6">
-              <h1 className="text-4xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-neutral-50 to-neutral-400">
-                Générateur de Contenu
+          <div className={`max-w-5xl mx-auto space-y-10 transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
+            <header className="flex flex-col gap-4 text-center">
+              <h1 className="text-4xl md:text-5xl font-semibold bg-clip-text text-transparent bg-gradient-to-b from-neutral-50 to-neutral-400">
+                Générateur de contenu
               </h1>
-            </div>
-
-            <p className="text-xl text-neutral-300 mb-8">
-              Créez du contenu professionnel en quelques secondes
-            </p>
-
-            {currentOrganization && (
-              <div className="inline-flex items-center space-x-3 bg-neutral-950/50 backdrop-blur-xl border border-neutral-800 rounded-full px-6 py-3 mb-8">
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-                <span className="text-blue-400 font-medium">
+              <p className="text-lg text-neutral-300">
+                Choisissez un brief, indiquez le sujet et laissez Postgen AI livrer des déclinaisons prêtes à publier.
+              </p>
+              {currentOrganization && (
+                <div className="mx-auto inline-flex items-center gap-3 rounded-full border border-neutral-800 bg-neutral-950/60 px-6 py-3 text-sm text-blue-300">
+                  <span className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
                   {currentOrganization.name}
-                </span>
-              </div>
-            )}
+                </div>
+              )}
+            </header>
 
-            {/* Generation Form */}
-            <div className="max-w-4xl mx-auto">
+            <div className="grid gap-10 xl:grid-cols-[minmax(0,420px)_minmax(0,1fr)] xl:items-start">
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Topic Input */}
-                <div className="relative group">
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-violet-500/20 rounded-2xl blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500" />
-                  <div className="relative bg-neutral-950 border border-neutral-800 rounded-2xl p-1.5 group-focus-within:border-blue-500/50 transition-all duration-300">
-                    <div className="flex items-center space-x-4 bg-neutral-900 rounded-xl p-4">
-                      <Search className="w-6 h-6 text-neutral-400 group-focus-within:text-blue-500 transition-colors" />
-                      <Input
-                        type="text"
-                        placeholder="Sur quel sujet voulez-vous créer du contenu ?"
-                        value={topic}
-                        onChange={(e) => setTopic(e.target.value)}
-                        className="flex-1 bg-transparent border-none text-lg placeholder:text-neutral-400 focus-visible:ring-0 focus-visible:ring-offset-0 text-white"
-                      />
-                      <Button
-                        type="submit"
-                        disabled={!topic.trim() || isGenerating}
-                        className="bg-blue-600 hover:bg-blue-700"
-                      >
-                        {isGenerating ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Génération...
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles className="w-4 h-4 mr-2" />
-                            Générer
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Suggestions */}
-                <div className="text-center space-y-4">
-                  <p className="text-neutral-500 text-sm">Suggestions :</p>
-                  <div className="flex flex-wrap justify-center gap-2">
-                    {suggestions.map((suggestion, index) => (
-                      <button
-                        key={index}
-                        type="button"
-                        onClick={() => selectSuggestion(suggestion)}
-                        className={`px-4 py-2 text-sm rounded-full border transition-all duration-300 hover:scale-105 ${
-                          index === currentSuggestion
-                            ? "bg-blue-950/50 border-blue-500/50 text-blue-300"
-                            : "bg-neutral-900 border-neutral-700 text-neutral-400 hover:border-neutral-600"
-                        }`}
-                      >
-                        {suggestion}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Prompt Library Selection */}
-                <Card className="bg-neutral-950/50 backdrop-blur-xl border-neutral-800">
-                  <CardHeader className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-neutral-100 text-lg flex items-center gap-2">
-                        <FileText className="h-5 w-5 text-blue-400" />
-                        Brief de campagne
-                      </CardTitle>
-                      {selectedPrompt && (
-                        <Badge variant="secondary" className="capitalize">
-                          {selectedPrompt.tone}
-                        </Badge>
-                      )}
-                    </div>
+                <Card className="border-neutral-800 bg-neutral-950/60 backdrop-blur">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-neutral-100">
+                      <Search className="h-5 w-5 text-blue-400" />
+                      Sujet de la campagne
+                    </CardTitle>
                     <CardDescription className="text-neutral-400">
-                      Choisissez un template de brief aligné avec les promesses de Postgen AI ou explorez la bibliothèque.
+                      Décrivez votre idée en une phrase pour guider la génération.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-6">
-                      <div className="w-full md:w-2/3">
-                        <Select
-                          value={selectedPromptId || "none"}
-                          onValueChange={(value) =>
-                            setSelectedPromptId(value === "none" ? "" : value)
-                          }
-                        >
-                          <SelectTrigger className="bg-neutral-900/80 border-neutral-700 text-neutral-100">
-                            <SelectValue placeholder="Sélectionnez un brief prêt à l'emploi" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-neutral-900/95 border-neutral-700 text-neutral-100">
-                            <SelectItem value="none">Sans brief prédéfini</SelectItem>
-                            {PROMPT_LIBRARY.map((prompt) => (
-                              <SelectItem key={prompt.id} value={prompt.id}>
-                                {prompt.title}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="flex w-full items-center justify-between gap-3 md:w-1/3">
-                        <Button
+                    <Input
+                      type="text"
+                      placeholder="Ex : Lancement de notre nouveau module d'automatisation"
+                      value={topic}
+                      onChange={(e) => setTopic(e.target.value)}
+                      className="bg-neutral-900/80 border-neutral-800 text-neutral-100 placeholder:text-neutral-500"
+                    />
+                    <div className="flex flex-wrap gap-2 text-xs text-neutral-400">
+                      {suggestions.map((suggestion) => (
+                        <button
+                          key={suggestion}
                           type="button"
-                          variant="outline"
-                          className="flex-1 gap-2 border-neutral-700 text-neutral-200 hover:bg-neutral-800"
-                          onClick={() => setSelectedPromptId("")}
-                          disabled={!selectedPromptId}
+                          onClick={() => setTopic(suggestion)}
+                          className="rounded-full border border-neutral-800 bg-neutral-900/60 px-3 py-1.5 transition hover:border-blue-500 hover:text-blue-300"
                         >
-                          <RefreshCw className="h-4 w-4" />
-                          Réinitialiser
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          className="flex-1 gap-2"
-                          onClick={() => router.push("/dashboard/prompts")}
-                        >
-                          <Sparkles className="h-4 w-4" />
-                          Explorer
-                        </Button>
-                      </div>
+                          {suggestion}
+                        </button>
+                      ))}
+                    </div>
+                    <Button
+                      type="submit"
+                      disabled={!topic.trim() || isGenerating}
+                      className="w-full bg-blue-600 hover:bg-blue-700"
+                    >
+                      {isGenerating ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Génération...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="mr-2 h-4 w-4" />
+                          Générer le contenu
+                        </>
+                      )}
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-neutral-800 bg-neutral-950/60 backdrop-blur">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-neutral-100">
+                      <FileText className="h-5 w-5 text-blue-400" />
+                      Brief Postgen AI
+                    </CardTitle>
+                    <CardDescription className="text-neutral-400">
+                      Sélectionnez un modèle pour pré-configurer le ton, les audiences et les objectifs.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <Select
+                      value={selectedPromptId || "none"}
+                      onValueChange={(value) => setSelectedPromptId(value === "none" ? "" : value)}
+                    >
+                      <SelectTrigger className="border-neutral-800 bg-neutral-900/80 text-neutral-100">
+                        <SelectValue placeholder="Sélectionnez un brief prêt à l'emploi" />
+                      </SelectTrigger>
+                      <SelectContent className="border-neutral-800 bg-neutral-900 text-neutral-100">
+                        <SelectItem value="none">Sans brief prédéfini</SelectItem>
+                        {PROMPT_LIBRARY.map((prompt) => (
+                          <SelectItem key={prompt.id} value={prompt.id}>
+                            {prompt.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <div className="flex gap-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="flex-1 border-neutral-800 text-neutral-200 hover:bg-neutral-800"
+                        onClick={() => setSelectedPromptId("")}
+                        disabled={!selectedPromptId}
+                      >
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Réinitialiser
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className="flex-1"
+                        onClick={() => router.push("/dashboard/prompts")}
+                      >
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Explorer
+                      </Button>
                     </div>
                     {selectedPrompt ? (
-                      <div className="rounded-xl border border-neutral-800 bg-neutral-900/60 p-4 text-left">
-                        <p className="text-sm text-neutral-200 font-medium">
+                      <div className="space-y-3 rounded-xl border border-neutral-800 bg-neutral-900/60 p-4 text-left">
+                        <p className="text-sm font-medium text-neutral-200">
                           {selectedPrompt.description}
                         </p>
-                        <p className="mt-3 text-sm leading-relaxed text-neutral-400">
+                        <p className="text-sm leading-relaxed text-neutral-400">
                           {selectedPrompt.instructions}
                         </p>
+                        <Badge variant="secondary" className="w-fit capitalize">
+                          Ton : {selectedPrompt.tone}
+                        </Badge>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-3 rounded-xl border border-dashed border-neutral-800 bg-neutral-900/40 p-4 text-sm text-neutral-400">
+                      <div className="flex items-center gap-3 rounded-xl border border-dashed border-neutral-800 bg-neutral-900/50 p-4 text-sm text-neutral-400">
                         <Info className="h-4 w-4" />
-                        Sélectionnez un brief pour pré-remplir les instructions envoyées à l'IA et garder une cohérence éditoriale.
+                        Sélectionnez un brief pour partager des consignes précises avec l'IA.
                       </div>
                     )}
                   </CardContent>
                 </Card>
 
-                {/* Tone Selection */}
-                <Card className="bg-neutral-950/50 backdrop-blur-xl border-neutral-800">
+                <Card className="border-neutral-800 bg-neutral-950/60 backdrop-blur">
                   <CardHeader>
                     <CardTitle className="text-neutral-100">Ton de communication</CardTitle>
+                    <CardDescription className="text-neutral-400">
+                      Choisissez l'intonation à appliquer aux différentes déclinaisons.
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <RadioGroup value={tone} onValueChange={setTone} className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <RadioGroup value={tone} onValueChange={setTone} className="grid grid-cols-2 gap-3">
                       {toneOptions.map((option) => (
-                        <div key={option.value} className="relative">
-                          <div className="flex items-center space-x-4 p-4 rounded-xl border border-neutral-700 hover:border-neutral-600 transition-all cursor-pointer">
-                            <RadioGroupItem
-                              value={option.value}
-                              id={option.value}
-                              className="border-neutral-400 text-blue-600"
-                            />
-                            <div className="text-xl">{option.icon}</div>
-                            <div className="flex-1">
-                              <Label
-                                htmlFor={option.value}
-                                className="text-neutral-100 font-medium cursor-pointer"
-                              >
-                                {option.label}
-                              </Label>
-                              <p className="text-neutral-500 text-sm mt-0.5">
-                                {option.description}
-                              </p>
-                            </div>
+                        <label
+                          key={option.value}
+                          htmlFor={option.value}
+                          className="flex cursor-pointer items-center gap-3 rounded-xl border border-neutral-800 bg-neutral-900/50 p-4 transition hover:border-blue-500"
+                        >
+                          <RadioGroupItem
+                            value={option.value}
+                            id={option.value}
+                            className="border-neutral-400 text-blue-500"
+                          />
+                          <div className="text-left">
+                            <p className="text-sm font-medium text-neutral-100">
+                              {option.icon} {option.label}
+                            </p>
+                            <p className="text-xs text-neutral-400">{option.description}</p>
                           </div>
-                        </div>
+                        </label>
                       ))}
                     </RadioGroup>
                   </CardContent>
                 </Card>
               </form>
-            </div>
-          </div>
 
-          {/* Generated Content */}
-          {isGenerating && (
-            <div className="flex flex-col items-center justify-center py-32">
-              <div className="relative mb-8">
-                <div className="w-20 h-20 border-4 border-blue-500/20 rounded-full animate-spin">
-                  <div className="absolute top-0 left-0 w-4 h-4 bg-blue-500 rounded-full" />
+              <div className="space-y-6">
+                <Card className="border-neutral-800 bg-neutral-950/60 backdrop-blur">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-neutral-100">
+                      <Eye className="h-5 w-5 text-blue-400" />
+                      Aperçu en direct
+                    </CardTitle>
+                    <CardDescription className="text-neutral-400">
+                      Consultez toutes les déclinaisons générées et copiez-les en un clic.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {isGenerating ? (
+                      <div className="flex flex-col items-center gap-4 py-12 text-neutral-300">
+                        <Loader2 className="h-6 w-6 animate-spin text-blue-400" />
+                        <p>Génération du contenu en cours…</p>
+                      </div>
+                    ) : generatedContent ? (
+                      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                        <TabsList className="grid w-full grid-cols-3 gap-1 rounded-xl border border-neutral-800 bg-neutral-900/60 p-1">
+                          <TabsTrigger value="posts" className="rounded-lg data-[state=active]:bg-neutral-800 data-[state=active]:text-neutral-100">
+                            Publications
+                          </TabsTrigger>
+                          <TabsTrigger value="carousel" className="rounded-lg data-[state=active]:bg-neutral-800 data-[state=active]:text-neutral-100">
+                            Carrousel
+                          </TabsTrigger>
+                          <TabsTrigger value="hashtags" className="rounded-lg data-[state=active]:bg-neutral-800 data-[state=active]:text-neutral-100">
+                            Hashtags
+                          </TabsTrigger>
+                        </TabsList>
+
+                        <TabsContent value="posts" className="space-y-6 pt-6">
+                          <div className="grid gap-6 lg:grid-cols-2">
+                            <Card className="border-neutral-800 bg-neutral-900/60">
+                              <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-neutral-100">
+                                  <Linkedin className="h-5 w-5 text-blue-400" />
+                                  LinkedIn
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent className="space-y-4">
+                                <div className="max-h-80 overflow-y-auto rounded-xl border border-neutral-800 bg-neutral-950/70 p-5 text-sm text-neutral-200">
+                                  {generatedContent.linkedinPost}
+                                </div>
+                                <Button
+                                  onClick={() => copyToClipboard(generatedContent.linkedinPost, "linkedin")}
+                                  className="w-full"
+                                >
+                                  {copiedItem === "linkedin" ? (
+                                    <>
+                                      <CheckCircle className="mr-2 h-4 w-4" />
+                                      Copié !
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Copy className="mr-2 h-4 w-4" />
+                                      Copier le post
+                                    </>
+                                  )}
+                                </Button>
+                              </CardContent>
+                            </Card>
+
+                            <Card className="border-neutral-800 bg-neutral-900/60">
+                              <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-neutral-100">
+                                  <Instagram className="h-5 w-5 text-pink-400" />
+                                  Instagram
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent className="space-y-4">
+                                <div className="max-h-80 overflow-y-auto rounded-xl border border-neutral-800 bg-neutral-950/70 p-5 text-sm text-neutral-200">
+                                  {generatedContent.instagramPost}
+                                </div>
+                                <Button
+                                  onClick={() => copyToClipboard(generatedContent.instagramPost, "instagram")}
+                                  className="w-full"
+                                >
+                                  {copiedItem === "instagram" ? (
+                                    <>
+                                      <CheckCircle className="mr-2 h-4 w-4" />
+                                      Copié !
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Copy className="mr-2 h-4 w-4" />
+                                      Copier le post
+                                    </>
+                                  )}
+                                </Button>
+                              </CardContent>
+                            </Card>
+                          </div>
+                        </TabsContent>
+
+                        <TabsContent value="carousel" className="pt-6">
+                          <BrandCarousel
+                            slides={generatedContent.carousel}
+                            branding={{
+                              topic,
+                              logo: null,
+                              primaryColor: "#0080FF",
+                              secondaryColor: "#0066CC",
+                              tone,
+                            }}
+                            autoPlay
+                            autoPlayInterval={5000}
+                          />
+                        </TabsContent>
+
+                        <TabsContent value="hashtags" className="space-y-4 pt-6">
+                          <div className="flex flex-wrap gap-3">
+                            {generatedContent.hashtags.map((hashtag, index) => (
+                              <button
+                                key={index}
+                                onClick={() => copyToClipboard(hashtag, `hashtag-${index}`)}
+                                className="rounded-full border border-neutral-800 bg-neutral-900/60 px-3 py-2 text-sm text-blue-300 transition hover:border-blue-500"
+                              >
+                                {hashtag}
+                              </button>
+                            ))}
+                          </div>
+                          <Button
+                            onClick={() => copyToClipboard(generatedContent.hashtags.join(" "), "hashtags")}
+                            className="w-full"
+                          >
+                            {copiedItem === "hashtags" ? (
+                              <>
+                                <CheckCircle className="mr-2 h-4 w-4" />
+                                Copié !
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="mr-2 h-4 w-4" />
+                                Copier tous les hashtags
+                              </>
+                            )}
+                          </Button>
+                        </TabsContent>
+                      </Tabs>
+                    ) : (
+                      <div className="space-y-4 rounded-xl border border-dashed border-neutral-800 bg-neutral-900/40 p-8 text-center text-neutral-400">
+                        <Sparkles className="mx-auto h-6 w-6 text-blue-400" />
+                        <p>
+                          Lancez une génération pour visualiser les déclinaisons LinkedIn, Instagram et vos hashtags optimisés.
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <div className="flex flex-wrap justify-between gap-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => router.push("/dashboard")}
+                    className="border-neutral-800 bg-black text-neutral-300 hover:text-white"
+                  >
+                    <ArrowUpLeft className="mr-2 h-4 w-4" />
+                    Retour au dashboard
+                  </Button>
+                  {generatedContent && (
+                    <Button onClick={generateContent} disabled={isGenerating || !topic.trim()}>
+                      {isGenerating ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Génération...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="mr-2 h-4 w-4" />
+                          Régénérer
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </div>
               </div>
-              <h3 className="text-2xl font-semibold text-neutral-100 mb-4">
-                Génération en cours...
-              </h3>
-              <p className="text-neutral-400 text-lg">
-                L'IA crée votre contenu personnalisé
-              </p>
             </div>
-          )}
-
-          {generatedContent && !isGenerating && (
-            <div className="max-w-7xl mx-auto">
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-3 bg-neutral-950/50 backdrop-blur-xl border border-neutral-800 rounded-2xl p-1.5 mb-8">
-                  <TabsTrigger value="posts" className="data-[state=active]:bg-neutral-800 data-[state=active]:text-neutral-100 rounded-xl">
-                    <Eye className="w-4 h-4 mr-2" />
-                    Publications
-                  </TabsTrigger>
-                  <TabsTrigger value="carousel" className="data-[state=active]:bg-neutral-800 data-[state=active]:text-neutral-100 rounded-xl">
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Carrousel
-                  </TabsTrigger>
-                  <TabsTrigger value="hashtags" className="data-[state=active]:bg-neutral-800 data-[state=active]:text-neutral-100 rounded-xl">
-                    <Hash className="w-4 h-4 mr-2" />
-                    Hashtags
-                  </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="posts" className="space-y-8">
-                  <div className="grid lg:grid-cols-2 gap-8">
-                    {/* LinkedIn Post */}
-                    <Card className="bg-neutral-950/50 backdrop-blur-xl border-neutral-800">
-                      <CardHeader>
-                        <CardTitle className="text-neutral-100 flex items-center space-x-3">
-                          <Linkedin className="w-5 h-5 text-blue-400" />
-                          <span>LinkedIn</span>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-6">
-                        <div className="bg-neutral-900/50 p-6 rounded-2xl border border-neutral-800 max-h-96 overflow-y-auto">
-                          <pre className="text-neutral-300 whitespace-pre-wrap font-sans text-sm leading-relaxed">
-                            {generatedContent.linkedinPost}
-                          </pre>
-                        </div>
-                        <Button
-                          onClick={() => copyToClipboard(generatedContent.linkedinPost, "linkedin")}
-                          className="w-full"
-                        >
-                          {copiedItem === "linkedin" ? (
-                            <>
-                              <CheckCircle className="w-4 h-4 mr-2" />
-                              Copié !
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="w-4 h-4 mr-2" />
-                              Copier
-                            </>
-                          )}
-                        </Button>
-                      </CardContent>
-                    </Card>
-
-                    {/* Instagram Post */}
-                    <Card className="bg-neutral-950/50 backdrop-blur-xl border-neutral-800">
-                      <CardHeader>
-                        <CardTitle className="text-neutral-100 flex items-center space-x-3">
-                          <Instagram className="w-5 h-5 text-pink-400" />
-                          <span>Instagram</span>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-6">
-                        <div className="bg-neutral-900/50 p-6 rounded-2xl border border-neutral-800 max-h-96 overflow-y-auto">
-                          <pre className="text-neutral-300 whitespace-pre-wrap font-sans text-sm leading-relaxed">
-                            {generatedContent.instagramPost}
-                          </pre>
-                        </div>
-                        <Button
-                          onClick={() => copyToClipboard(generatedContent.instagramPost, "instagram")}
-                          className="w-full"
-                        >
-                          {copiedItem === "instagram" ? (
-                            <>
-                              <CheckCircle className="w-4 h-4 mr-2" />
-                              Copié !
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="w-4 h-4 mr-2" />
-                              Copier
-                            </>
-                          )}
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="carousel" className="space-y-8">
-                  <BrandCarousel
-                    slides={generatedContent.carousel}
-                    branding={{
-                      topic,
-                      logo: null,
-                      primaryColor: "#0080FF",
-                      secondaryColor: "#0066CC",
-                      tone,
-                    }}
-                    autoPlay={true}
-                    autoPlayInterval={5000}
-                  />
-                </TabsContent>
-
-                <TabsContent value="hashtags" className="space-y-8">
-                  <Card className="bg-neutral-950/50 backdrop-blur-xl border-neutral-800">
-                    <CardHeader>
-                      <CardTitle className="text-neutral-100">Hashtags optimisés</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                      <div className="flex flex-wrap gap-3">
-                        {generatedContent.hashtags.map((hashtag, index) => (
-                          <button
-                            key={index}
-                            onClick={() => copyToClipboard(hashtag, `hashtag-${index}`)}
-                            className="px-4 py-2 bg-neutral-900/50 border border-neutral-800 rounded-xl hover:border-neutral-700 transition-all"
-                          >
-                            <span className="text-blue-400 font-medium">{hashtag}</span>
-                          </button>
-                        ))}
-                      </div>
-                      <Button
-                        onClick={() => copyToClipboard(generatedContent.hashtags.join(" "), "hashtags")}
-                        className="w-full"
-                      >
-                        {copiedItem === "hashtags" ? (
-                          <>
-                            <CheckCircle className="w-4 h-4 mr-2" />
-                            Copié !
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-4 h-4 mr-2" />
-                            Copier tous les hashtags
-                          </>
-                        )}
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-              </Tabs>
-            </div>
-          )}
-
-          {/* Navigation */}
-          <div className="flex justify-between items-center mt-16 max-w-7xl mx-auto">
-            <Button variant="outline" onClick={() => router.push("/dashboard")} className="border-neutral-700 bg-black text-neutral-300">
-              <ArrowUpLeft className="w-4 h-4 mr-2" />
-              Retour au dashboard
-            </Button>
-
-            {generatedContent && (
-              <Button onClick={generateContent} disabled={isGenerating || !topic.trim()}>
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Génération...
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                    Régénérer
-                  </>
-                )}
-              </Button>
-            )}
           </div>
         </div>
       </div>
