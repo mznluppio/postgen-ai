@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { AuthGuard } from "@/components/auth/AuthGuard";
@@ -21,21 +22,36 @@ import { Progress } from "@/components/ui/progress";
 import {
   AlertCircle,
   ArrowUpRight,
+  BarChart3,
+  ChevronRight,
+  FolderOpen,
   Loader2,
-  Sparkles,
   Mail,
-  Phone,
   MessageCircle,
+  Phone,
+  Sparkles,
   LifeBuoy,
 } from "lucide-react";
 import { CreateOrganizationDialog } from "@/components/dashboard/CreateOrganizationDialog";
 import AuthPage from "../auth/page";
 import { useEngagementInsights } from "@/hooks/useEngagementInsights";
-import { AnalyticsSummaryCards } from "@/components/dashboard/AnalyticsSummaryCards";
 import { EngagementPerformanceChart } from "@/components/dashboard/EngagementPerformanceChart";
 import { TopContentTable } from "@/components/dashboard/TopContentTable";
 
 const numberFormatter = new Intl.NumberFormat("fr-FR");
+
+function formatSummaryValue(label: string, value: number) {
+  if (label === "Taux d'engagement") {
+    return `${value}%`;
+  }
+
+  return numberFormatter.format(value);
+}
+
+function formatChange(change: number) {
+  const rounded = Math.abs(change).toFixed(1);
+  return `${change >= 0 ? "+" : "-"}${rounded}%`;
+}
 
 export default function Dashboard() {
   const { user, currentOrganization } = useAuth();
@@ -111,6 +127,29 @@ export default function Dashboard() {
   const compliance = currentOrganization.compliance;
   const isEnterprise = currentOrganization.plan === "enterprise";
 
+  const quickActions = [
+    {
+      label: "Générer du contenu",
+      description: "Créez un post ou une campagne en quelques clics.",
+      href: "/generate",
+      icon: Sparkles,
+    },
+    {
+      label: "Bibliothèque de contenus",
+      description: "Retrouvez vos brouillons et publications.",
+      href: "/dashboard/library",
+      icon: FolderOpen,
+    },
+    {
+      label: "Analyser les performances",
+      description: "Explorez les métriques détaillées et tendances.",
+      href: "/dashboard/analytics",
+      icon: BarChart3,
+    },
+  ] as const;
+
+  const keyHighlights = (insights?.summaryCards ?? []).slice(0, 3);
+
   const benchmark = insights?.planBenchmark;
   const weeklyProgress = benchmark?.weeklyViewTarget
     ? Math.min(
@@ -131,21 +170,75 @@ export default function Dashboard() {
     : 0;
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-      <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
-        <h1 className="text-2xl font-bold mb-2">
-          Bienvenue, {user?.name} ! 👋
-        </h1>
-        <p className="text-muted-foreground mb-4">
-          Vous êtes dans l'organisation <strong>{currentOrganization.name}</strong>. Créez du contenu exceptionnel avec l'IA.
-        </p>
-        <Button asChild>
-          <a href="/generate">
-            <Sparkles className="mr-2 h-4 w-4" />
-            Créer du contenu
-          </a>
-        </Button>
-      </div>
+    <div className="flex flex-1 flex-col gap-6 p-4 pt-0">
+      <section className="grid gap-4 lg:grid-cols-[2fr_1fr]">
+        <Card>
+          <CardHeader className="space-y-2">
+            <CardTitle className="text-2xl">
+              Bienvenue, {user?.name} ! 👋
+            </CardTitle>
+            <CardDescription>
+              Vous êtes dans l'organisation <strong>{currentOrganization.name}</strong>. Accédez rapidement aux actions essentielles pour garder le cap.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+              <Badge variant="secondary" className="uppercase">
+                Plan {planDetails?.name ?? currentOrganization.plan}
+              </Badge>
+              {planDetails?.price && <span>{planDetails.price}</span>}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button asChild>
+                <a href="/generate">
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Créer du contenu
+                </a>
+              </Button>
+              <Button asChild variant="outline">
+                <a href="/dashboard/projects">Voir mes projets</a>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-dashed">
+          <CardHeader>
+            <CardTitle>Priorités du moment</CardTitle>
+            <CardDescription>
+              Trois points d'entrée pour garder votre flux de travail simple et efficace.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="grid gap-3">
+              {quickActions.map((action) => {
+                const Icon = action.icon;
+                return (
+                  <li key={action.href}>
+                    <Link
+                      href={action.href}
+                      className="group flex items-center justify-between gap-4 rounded-lg border bg-card/60 p-3 transition hover:border-primary"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+                          <Icon className="h-5 w-5 text-primary" />
+                        </span>
+                        <div>
+                          <p className="text-sm font-medium">{action.label}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {action.description}
+                          </p>
+                        </div>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground transition group-hover:translate-x-1 group-hover:text-primary" />
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </CardContent>
+        </Card>
+      </section>
 
       {metricsError && (
         <Alert variant="destructive">
@@ -155,9 +248,51 @@ export default function Dashboard() {
         </Alert>
       )}
 
-      <AnalyticsSummaryCards cards={insights?.summaryCards ?? []} />
+      {keyHighlights.length > 0 && (
+        <Card>
+          <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <CardTitle>Indicateurs clés</CardTitle>
+              <CardDescription>
+                Suivi rapide de vos signaux les plus utiles cette semaine.
+              </CardDescription>
+            </div>
+            <span className="text-xs text-muted-foreground">
+              Basé sur vos dernières métriques consolidées
+            </span>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {keyHighlights.map((card) => {
+                const positive = card.change >= 0;
+                return (
+                  <div
+                    key={card.label}
+                    className="rounded-lg border bg-muted/40 p-4"
+                  >
+                    <p className="text-sm font-medium text-muted-foreground">
+                      {card.label}
+                    </p>
+                    <p className="mt-2 text-2xl font-semibold">
+                      {formatSummaryValue(card.label, card.value)}
+                    </p>
+                    <p
+                      className={`mt-3 text-xs font-medium ${positive ? "text-emerald-600" : "text-rose-600"}`}
+                    >
+                      {formatChange(card.change)} vs S-1
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {card.helper}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <section className="grid gap-4 xl:grid-cols-3">
         <EngagementPerformanceChart
           data={insights?.timeseries ?? []}
           loading={loadingMetrics}
@@ -171,19 +306,21 @@ export default function Dashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div>
+            <div className="space-y-3 rounded-lg border p-3">
               <div className="flex items-center justify-between text-sm font-medium">
                 <span>Vues hebdomadaires</span>
                 <span>
-                  {benchmark ? numberFormatter.format(benchmark.currentWeeklyViews) : 0}
+                  {benchmark
+                    ? numberFormatter.format(benchmark.currentWeeklyViews)
+                    : 0}
                   <span className="text-muted-foreground">
                     {" "}/ {numberFormatter.format(benchmark?.weeklyViewTarget ?? 0)}
                   </span>
                 </span>
               </div>
-              <Progress value={weeklyProgress} className="mt-2" />
+              <Progress value={weeklyProgress} className="h-2" />
             </div>
-            <div>
+            <div className="space-y-3 rounded-lg border p-3">
               <div className="flex items-center justify-between text-sm font-medium">
                 <span>Taux d'engagement</span>
                 <span>
@@ -193,7 +330,7 @@ export default function Dashboard() {
                   </span>
                 </span>
               </div>
-              <Progress value={engagementProgress} className="mt-2" />
+              <Progress value={engagementProgress} className="h-2" />
             </div>
             {planDetails?.price && (
               <div className="rounded-md bg-muted p-3 text-sm text-muted-foreground">
@@ -204,72 +341,77 @@ export default function Dashboard() {
             )}
           </CardContent>
         </Card>
-      </div>
+      </section>
 
-      <TopContentTable items={insights?.topContent ?? []} loading={loadingMetrics} />
+      <section className="grid gap-4 xl:grid-cols-[2fr_1fr] xl:items-start">
+        <TopContentTable
+          items={insights?.topContent ?? []}
+          loading={loadingMetrics}
+        />
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>Recommandations IA</CardTitle>
-            <CardDescription>
-              Suggestions d'optimisation basées sur vos métriques récentes et votre plan.
-            </CardDescription>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleGenerateRecommendations}
-            disabled={loadingRecommendations || !insights?.metrics?.length}
-          >
-            {loadingRecommendations ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Génération…
-              </>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between gap-4">
+            <div>
+              <CardTitle>Recommandations IA</CardTitle>
+              <CardDescription>
+                Suggestions d'optimisation basées sur vos métriques récentes et votre plan.
+              </CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleGenerateRecommendations}
+              disabled={loadingRecommendations || !insights?.metrics?.length}
+            >
+              {loadingRecommendations ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Génération…
+                </>
+              ) : (
+                <>
+                  <ArrowUpRight className="mr-2 h-4 w-4" />
+                  Générer
+                </>
+              )}
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {!insights?.metrics?.length ? (
+              <p className="text-sm text-muted-foreground">
+                Publiez du contenu et revenez pour obtenir des recommandations personnalisées.
+              </p>
+            ) : loadingRecommendations ? (
+              <div className="flex items-center justify-center py-6 text-muted-foreground">
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                Analyse des métriques…
+              </div>
+            ) : recommendationError ? (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Recommandations indisponibles</AlertTitle>
+                <AlertDescription>{recommendationError}</AlertDescription>
+              </Alert>
+            ) : recommendations.length ? (
+              <ul className="space-y-3 text-sm">
+                {recommendations.map((suggestion, index) => (
+                  <li
+                    key={`${suggestion}-${index}`}
+                    className="flex items-start gap-2 rounded-md border border-dashed border-muted-foreground/40 bg-muted/40 p-3"
+                  >
+                    <Sparkles className="mt-0.5 h-4 w-4 text-primary" />
+                    <span>{suggestion}</span>
+                  </li>
+                ))}
+              </ul>
             ) : (
-              <>
-                <ArrowUpRight className="mr-2 h-4 w-4" />
-                Générer
-              </>
+              <div className="text-sm text-muted-foreground">
+                Cliquez sur « Générer » pour obtenir des pistes d'amélioration ciblées.
+              </div>
             )}
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {!insights?.metrics?.length ? (
-            <p className="text-sm text-muted-foreground">
-              Publiez du contenu et revenez pour obtenir des recommandations personnalisées.
-            </p>
-          ) : loadingRecommendations ? (
-            <div className="flex items-center justify-center py-6 text-muted-foreground">
-              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              Analyse des métriques…
-            </div>
-          ) : recommendationError ? (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Recommandations indisponibles</AlertTitle>
-              <AlertDescription>{recommendationError}</AlertDescription>
-            </Alert>
-          ) : recommendations.length ? (
-            <ul className="space-y-3 text-sm">
-              {recommendations.map((suggestion, index) => (
-                <li
-                  key={`${suggestion}-${index}`}
-                  className="flex items-start gap-2 rounded-md border border-dashed border-muted-foreground/40 bg-muted/40 p-3"
-                >
-                  <Sparkles className="mt-0.5 h-4 w-4 text-primary" />
-                  <span>{suggestion}</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="text-sm text-muted-foreground">
-              Cliquez sur « Générer » pour obtenir des pistes d'amélioration ciblées.
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </section>
 
       {isEnterprise && (
         <Card>
