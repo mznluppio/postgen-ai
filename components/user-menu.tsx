@@ -47,7 +47,6 @@ export function UserMenu({ user }: UserMenuProps) {
       console.error("Logout error:", error);
     }
   };
-  console.log(user);
   const router = useRouter();
   const avatarUrl = getAvatarUrl(user.avatar);
 
@@ -106,20 +105,26 @@ export function UserMenu({ user }: UserMenuProps) {
           <User className="mr-2 h-4 w-4" />
           Profil
         </DropdownMenuItem>
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={() => router.push("/dashboard/settings/account")}>
           <Settings className="mr-2 h-4 w-4" />
           Paramètres du compte
         </DropdownMenuItem>
-        <DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() =>
+            router.push("/dashboard/settings/account#notifications")
+          }
+        >
           <Bell className="mr-2 h-4 w-4" />
           Notifications
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => router.push("/dashboard/settings/billing")}
+        >
           <CreditCard className="mr-2 h-4 w-4" />
           Facturation
         </DropdownMenuItem>
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={() => router.push("/dashboard/support")}>
           <HelpCircle className="mr-2 h-4 w-4" />
           Aide & Support
         </DropdownMenuItem>

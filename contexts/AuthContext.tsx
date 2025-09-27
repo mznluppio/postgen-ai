@@ -17,6 +17,7 @@ interface AuthContextType {
     plan?: "starter" | "pro" | "enterprise",
   ) => Promise<Organization>;
   updateCurrentOrganization: (data: Partial<Organization>) => Promise<void>;
+  updateUserProfile: (data: Partial<User>) => Promise<void>;
   refreshUser: () => Promise<void>;
 }
 
@@ -113,6 +114,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await refreshUser();
     } catch (error) {
       console.error("Erreur lors de la mise à jour de l'organisation :", error);
+      throw error;
+    }
+  };
+
+  const updateUserProfile = async (data: Partial<User>) => {
+    if (!user) return;
+
+    try {
+      await authService.updateUserProfile(user.$id, data);
+      await refreshUser();
+    } catch (error) {
+      console.error("Erreur lors de la mise à jour du profil :", error);
+      throw error;
     }
   };
 
@@ -133,6 +147,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         switchOrganization,
         createOrganization,
         updateCurrentOrganization,
+        updateUserProfile,
         refreshUser,
       }}
     >
