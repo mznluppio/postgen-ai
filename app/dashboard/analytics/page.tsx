@@ -32,6 +32,7 @@ import { TopContentTable } from "@/components/dashboard/TopContentTable";
 import { useEngagementInsights } from "@/hooks/useEngagementInsights";
 import { useAnalyticsAvailability } from "@/hooks/useAnalyticsAvailability";
 import { buildEngagementInsights, type EngagementMetric } from "@/lib/analytics";
+import { formatList } from "@/lib/feature-gates";
 import { type PlanId } from "@/lib/plans";
 import { AlertCircle, Loader2 } from "lucide-react";
 
@@ -95,10 +96,19 @@ export default function AnalyticsPage() {
   } = useEngagementInsights();
   const {
     hasAnalyticsAccess,
+    hasPlanAccess,
+    requiredPlanLabel,
+    currentPlanLabel,
     loading: loadingIntegrations,
     error: integrationsError,
     requiredIntegrationLabels,
+    missingIntegrationLabels,
   } = useAnalyticsAvailability();
+  const integrationRequirementText = formatList(
+    missingIntegrationLabels.length
+      ? missingIntegrationLabels
+      : requiredIntegrationLabels,
+  );
   const [timeWindow, setTimeWindow] = useState<string>(TIME_WINDOWS[1]?.value ?? "30");
   const [channelFilter, setChannelFilter] = useState<string>("all");
 
@@ -191,12 +201,30 @@ export default function AnalyticsPage() {
           <Loader2 className="h-4 w-4 animate-spin" />
           <span>Vérification des intégrations…</span>
         </div>
+      ) : !hasPlanAccess ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Mettez à niveau votre plan</CardTitle>
+            <CardDescription>
+              Votre plan {currentPlanLabel} n'inclut pas encore les analytics détaillées.
+              {" "}
+              {requiredPlanLabel
+                ? `Passez au plan ${requiredPlanLabel} pour activer les rapports et recommandations IA.`
+                : "Mettez à niveau votre offre pour activer les rapports et recommandations IA."}
+            </CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Button asChild>
+              <Link href="/dashboard/settings/organization">Mettre à niveau</Link>
+            </Button>
+          </CardFooter>
+        </Card>
       ) : !hasAnalyticsAccess ? (
         <Card>
           <CardHeader>
             <CardTitle>Connectez vos canaux sociaux</CardTitle>
             <CardDescription>
-              Ajoutez vos clés {requiredIntegrationLabels.join(", ")} dans les intégrations pour débloquer l'analytics.
+              Ajoutez vos clés {integrationRequirementText} dans les intégrations pour débloquer l'analytics.
             </CardDescription>
           </CardHeader>
           <CardFooter>

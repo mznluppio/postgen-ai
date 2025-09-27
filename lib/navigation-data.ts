@@ -17,6 +17,7 @@ import {
   Users,
   Zap,
 } from "lucide-react";
+import type { Plan } from "@/lib/plans";
 import { EMAIL_CONTENT_TYPES, buildEmailTypeUrl } from "./email-content";
 
 export interface Organization {
@@ -43,6 +44,10 @@ export interface NavigationItem {
   badge?: string;
   isActive?: boolean;
   items?: NavigationItem[];
+  minimumPlan?: Plan;
+  requiresIntegrations?: string[];
+  disabled?: boolean;
+  tooltip?: string;
 }
 
 export const organizations: Organization[] = [
@@ -114,6 +119,8 @@ export const mainNavigation: NavigationItem[] = [
     title: "Analytics",
     url: "/dashboard/analytics",
     icon: BarChart3,
+    minimumPlan: "pro",
+    requiresIntegrations: ["linkedin", "instagram", "email"],
   },
 ];
 
@@ -221,26 +228,32 @@ export const managementTools: NavigationItem[] = [
     title: "Content Calendar",
     url: "/dashboard/tools/calendar",
     icon: Calendar,
+    minimumPlan: "pro",
+    requiresIntegrations: ["linkedin", "instagram", "email"],
   },
   {
     title: "Brand Guidelines",
     url: "/dashboard/tools/brand",
     icon: Palette,
+    minimumPlan: "starter",
   },
   {
     title: "Target Audiences",
     url: "/dashboard/tools/audiences",
     icon: Users,
+    minimumPlan: "pro",
   },
   {
     title: "AI Models",
     url: "/dashboard/tools/ai-models",
     icon: Bot,
+    minimumPlan: "enterprise",
   },
   {
     title: "Content Ideas",
     url: "/dashboard/tools/ideas",
     icon: Lightbulb,
+    minimumPlan: "starter",
   },
 ];
 

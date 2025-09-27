@@ -36,6 +36,8 @@ import {
 import { Briefcase, Copy, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useFeatureGate } from "@/hooks/useFeatureGate";
+import { formatList } from "@/lib/feature-gates";
 
 export default function ArticleContentPage() {
   const { currentOrganization, user } = useAuth();
@@ -51,6 +53,35 @@ export default function ArticleContentPage() {
   ]);
   const [scheduledAt, setScheduledAt] = useState<string>("");
   const [automationEnabled, setAutomationEnabled] = useState(false);
+  const automationGate = useFeatureGate("automation");
+
+  const automationDisabled =
+    automationGate.loading || Boolean(automationGate.error) || !automationGate.hasAccess;
+
+  const automationDisableReason = useMemo(() => {
+    if (automationGate.loading) {
+      return undefined;
+    }
+    if (automationGate.error) {
+      return automationGate.error;
+    }
+    if (!automationGate.hasPlanAccess) {
+      return automationGate.requiredPlanLabel
+        ? `Disponible avec le plan ${automationGate.requiredPlanLabel}`
+        : "Mettez à niveau votre offre pour activer la planification.";
+    }
+    if (!automationGate.hasRequiredIntegrations) {
+      const requirementText = formatList(
+        automationGate.missingIntegrationLabels.length
+          ? automationGate.missingIntegrationLabels
+          : automationGate.requiredIntegrationLabels,
+      );
+      return requirementText
+        ? `Connectez ${requirementText} dans les intégrations pour planifier vos articles.`
+        : "Configurez vos intégrations pour activer la planification.";
+    }
+    return undefined;
+  }, [automationGate]);
 
   useEffect(() => {
     if (selectedChannels.length === 0 && automationEnabled) {
@@ -63,6 +94,12 @@ export default function ArticleContentPage() {
   const [updatingContentId, setUpdatingContentId] = useState<string | null>(
     null,
   );
+
+  useEffect(() => {
+    if (automationDisabled && automationEnabled) {
+      setAutomationEnabled(false);
+    }
+  }, [automationDisabled, automationEnabled]);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -313,6 +350,9 @@ Génère un contenu de type "${type}" en lien avec ce projet.`;
         onScheduledAtChange={setScheduledAt}
         automationEnabled={automationEnabled}
         onAutomationChange={setAutomationEnabled}
+        disabled={automationDisabled}
+        disableReason={automationDisableReason}
+        loading={automationGate.loading}
       />
 
       <ContentGenerator

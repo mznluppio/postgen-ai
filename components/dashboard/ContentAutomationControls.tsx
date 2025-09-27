@@ -22,6 +22,9 @@ interface ContentAutomationControlsProps {
   onScheduledAtChange: (value: string) => void;
   automationEnabled: boolean;
   onAutomationChange: (value: boolean) => void;
+  disabled?: boolean;
+  disableReason?: string;
+  loading?: boolean;
 }
 
 export default function ContentAutomationControls({
@@ -31,6 +34,9 @@ export default function ContentAutomationControls({
   onScheduledAtChange,
   automationEnabled,
   onAutomationChange,
+  disabled = false,
+  disableReason,
+  loading = false,
 }: ContentAutomationControlsProps) {
   const minDateTimeValue = useMemo(() => {
     const now = new Date();
@@ -38,7 +44,15 @@ export default function ContentAutomationControls({
     return local.toISOString().slice(0, 16);
   }, []);
 
-  const automationSummary = useMemo(() => {
+  const isDisabled = disabled || loading;
+
+  const statusLabel = useMemo(() => {
+    if (isDisabled) {
+      if (loading) {
+        return "Vérification des prérequis…";
+      }
+      return disableReason || "Planification verrouillée";
+    }
     if (!automationEnabled) {
       return "Automatisation désactivée (publication manuelle)";
     }
@@ -48,9 +62,12 @@ export default function ContentAutomationControls({
     }
 
     return `Automatisation programmée le ${formatScheduleDisplay(scheduledAt)}`;
-  }, [automationEnabled, scheduledAt]);
+  }, [automationEnabled, disableReason, isDisabled, loading, scheduledAt]);
 
   const handleChannelToggle = (channelId: string, nextValue: boolean) => {
+    if (isDisabled) {
+      return;
+    }
     if (nextValue) {
       onChannelsChange(Array.from(new Set([...selectedChannels, channelId])));
     } else {
@@ -59,7 +76,7 @@ export default function ContentAutomationControls({
   };
 
   return (
-    <Card className="border-dashed">
+    <Card className={`border-dashed ${isDisabled ? "opacity-60" : ""}`}>
       <CardHeader>
         <CardTitle className="text-lg">Diffusion & automatisation</CardTitle>
         <CardDescription>
@@ -81,6 +98,7 @@ export default function ContentAutomationControls({
                     onCheckedChange={(checked) =>
                       handleChannelToggle(channel.id, Boolean(checked))
                     }
+                    disabled={isDisabled}
                   />
                   <Label htmlFor={id} className="text-sm">
                     {channel.label}
@@ -102,8 +120,12 @@ export default function ContentAutomationControls({
             id="scheduledAt"
             type="datetime-local"
             value={scheduledAt}
-            onChange={(event) => onScheduledAtChange(event.target.value)}
+            onChange={(event) => {
+              if (isDisabled) return;
+              onScheduledAtChange(event.target.value);
+            }}
             min={minDateTimeValue}
+            disabled={isDisabled}
           />
           <p className="text-xs text-muted-foreground">
             Définissez un horaire pour diffuser automatiquement votre contenu.
@@ -121,14 +143,22 @@ export default function ContentAutomationControls({
           </div>
           <Switch
             checked={automationEnabled}
-            onCheckedChange={(checked) => onAutomationChange(Boolean(checked))}
-            disabled={selectedChannels.length === 0}
+            onCheckedChange={(checked) => {
+              if (isDisabled) return;
+              onAutomationChange(Boolean(checked));
+            }}
+            disabled={isDisabled || selectedChannels.length === 0}
           />
         </div>
 
-        <Badge variant={automationEnabled ? "default" : "outline"}>
-          {automationSummary}
+        <Badge
+          variant={!isDisabled && automationEnabled ? "default" : "outline"}
+        >
+          {statusLabel}
         </Badge>
+        {isDisabled && disableReason && !loading && (
+          <p className="text-xs text-muted-foreground">{disableReason}</p>
+        )}
       </CardContent>
     </Card>
   );

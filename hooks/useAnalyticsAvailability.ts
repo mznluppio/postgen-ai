@@ -1,57 +1,34 @@
 "use client";
 
-import { useMemo } from "react";
+import { useFeatureGate } from "@/hooks/useFeatureGate";
+import type { IntegrationDocument } from "@/lib/integrations";
 
-import { useAuth } from "@/contexts/AuthContext";
-import { useOrganizationIntegrations } from "@/hooks/useOrganizationIntegrations";
-
-const REQUIRED_ANALYTICS_INTEGRATIONS = ["linkedin", "instagram", "email"] as const;
-const REQUIRED_INTEGRATION_LABELS: Record<
-  (typeof REQUIRED_ANALYTICS_INTEGRATIONS)[number],
-  string
-> = {
-  linkedin: "LinkedIn",
-  instagram: "Instagram",
-  email: "E-mail",
-};
-
-type RequiredAnalyticsIntegration = (typeof REQUIRED_ANALYTICS_INTEGRATIONS)[number];
-
-interface UseAnalyticsAvailabilityResult {
+export interface UseAnalyticsAvailabilityResult {
   hasAnalyticsAccess: boolean;
+  hasPlanAccess: boolean;
+  requiredPlanLabel: string | null;
+  currentPlanLabel: string;
   loading: boolean;
   error: string | null;
-  integrations: ReturnType<typeof useOrganizationIntegrations>["integrations"];
-  requiredIntegrations: RequiredAnalyticsIntegration[];
+  integrations: IntegrationDocument[];
+  requiredIntegrations: string[];
   requiredIntegrationLabels: string[];
+  missingIntegrationLabels: string[];
 }
 
 export function useAnalyticsAvailability(): UseAnalyticsAvailabilityResult {
-  const { currentOrganization } = useAuth();
-  const integrationState = useOrganizationIntegrations(currentOrganization);
-
-  const hasAnalyticsAccess = useMemo(() => {
-    if (!currentOrganization) {
-      return false;
-    }
-
-    return REQUIRED_ANALYTICS_INTEGRATIONS.some((integrationId) =>
-      integrationState.integrations.some(
-        (integration) =>
-          integration.integration === integrationId &&
-          integration.status === "connected",
-      ),
-    );
-  }, [currentOrganization, integrationState.integrations]);
+  const gate = useFeatureGate("analytics");
 
   return {
-    hasAnalyticsAccess,
-    loading: integrationState.loading,
-    error: integrationState.error,
-    integrations: integrationState.integrations,
-    requiredIntegrations: [...REQUIRED_ANALYTICS_INTEGRATIONS],
-    requiredIntegrationLabels: REQUIRED_ANALYTICS_INTEGRATIONS.map(
-      (id) => REQUIRED_INTEGRATION_LABELS[id],
-    ),
+    hasAnalyticsAccess: gate.hasAccess,
+    hasPlanAccess: gate.hasPlanAccess,
+    requiredPlanLabel: gate.requiredPlanLabel,
+    currentPlanLabel: gate.currentPlanLabel,
+    loading: gate.loading,
+    error: gate.error,
+    integrations: gate.integrations,
+    requiredIntegrations: gate.requiredIntegrations,
+    requiredIntegrationLabels: gate.requiredIntegrationLabels,
+    missingIntegrationLabels: gate.missingIntegrationLabels,
   };
 }

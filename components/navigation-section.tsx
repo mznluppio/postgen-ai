@@ -30,7 +30,7 @@ export function NavigationSection({ items, defaultOpen = [] }: NavigationSection
             <Collapsible key={item.title} asChild defaultOpen={isDefaultOpen} className="group/collapsible">
               <SidebarMenuItem>
                 <CollapsibleTrigger asChild>
-                  <SidebarMenuButton tooltip={item.title} className="w-full">
+                  <SidebarMenuButton tooltip={item.tooltip ?? item.title} className="w-full">
                     <item.icon className="size-4" />
                     <span className="flex-1">{item.title}</span>
                     {item.badge && (
@@ -66,16 +66,34 @@ export function NavigationSection({ items, defaultOpen = [] }: NavigationSection
 
         return (
           <SidebarMenuItem key={item.title}>
-            <SidebarMenuButton asChild isActive={item.isActive} tooltip={item.title}>
-              <a href={item.url} className="flex items-center gap-2">
-                <item.icon className="size-4" />
-                <span className="flex-1">{item.title}</span>
-                {item.badge && (
-                  <Badge variant="secondary" className="ml-auto text-xs">
-                    {item.badge}
-                  </Badge>
-                )}
-              </a>
+            <SidebarMenuButton
+              asChild={!item.disabled}
+              isActive={item.isActive}
+              tooltip={item.tooltip ?? item.title}
+              disabled={item.disabled}
+              className={item.disabled ? "cursor-not-allowed opacity-60" : undefined}
+            >
+              {item.disabled ? (
+                <div className="flex items-center gap-2">
+                  <item.icon className="size-4" />
+                  <span className="flex-1">{item.title}</span>
+                  {item.badge && (
+                    <Badge variant="secondary" className="ml-auto text-xs">
+                      {item.badge}
+                    </Badge>
+                  )}
+                </div>
+              ) : (
+                <a href={item.url} className="flex items-center gap-2">
+                  <item.icon className="size-4" />
+                  <span className="flex-1">{item.title}</span>
+                  {item.badge && (
+                    <Badge variant="secondary" className="ml-auto text-xs">
+                      {item.badge}
+                    </Badge>
+                  )}
+                </a>
+              )}
             </SidebarMenuButton>
           </SidebarMenuItem>
         )
