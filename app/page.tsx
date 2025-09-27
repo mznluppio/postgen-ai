@@ -319,7 +319,7 @@ export default function Home() {
                 Des plans adaptés à chaque étape de votre croissance.
               </h2>
               <p className="mt-4 text-lg text-muted-foreground">
-                Passez au plan supérieur quand votre production s'accélère. Sans frais cachés, sans surprise.
+                Passez au plan supérieur quand votre production s'accélère. Chaque tarif est calculé par espace avec des sièges inclus et des options pour accompagner votre croissance.
               </p>
             </div>
             <div className="mt-12 grid gap-6 lg:grid-cols-3">
@@ -335,7 +335,7 @@ export default function Home() {
                     <CardTitle className="mt-4 text-3xl font-semibold">{plan.price}</CardTitle>
                     <CardDescription>{plan.description}</CardDescription>
                   </CardHeader>
-                  <CardContent className="mt-auto">
+                  <CardContent className="mt-auto space-y-6">
                     <ul className="space-y-3 text-sm text-muted-foreground">
                       {plan.perks.map((perk) => (
                         <li key={perk} className="flex items-start gap-3">
@@ -344,8 +344,16 @@ export default function Home() {
                         </li>
                       ))}
                     </ul>
+                    {plan.seatSummary && (
+                      <div className="rounded-lg border border-dashed border-slate-200 bg-white/70 p-4 text-sm leading-relaxed">
+                        <p className="font-medium text-slate-900">{plan.seatSummary.included}</p>
+                        {plan.seatSummary.additional && (
+                          <p className="text-muted-foreground">{plan.seatSummary.additional}</p>
+                        )}
+                      </div>
+                    )}
                     {plan.cta && (
-                      <Button className="mt-8 w-full" variant={plan.cta.variant} asChild>
+                      <Button className="w-full" variant={plan.cta.variant} asChild>
                         {plan.cta.external ? (
                           <a href={plan.cta.href} target="_blank" rel="noopener noreferrer">
                             {plan.cta.label}

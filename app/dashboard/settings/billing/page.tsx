@@ -14,7 +14,13 @@ import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/contexts/AuthContext";
 import { type BillingSettings, type InvoiceRecord, type PaymentMethodDetails } from "@/lib/auth";
-import { PLAN_LABELS, type PlanId, PRICING_PLANS } from "@/lib/plans";
+import {
+  PLAN_LABELS,
+  type PlanId,
+  PRICING_PLANS,
+  getPlanSeatPolicy,
+  getPlanSeatLimit,
+} from "@/lib/plans";
 
 const DEFAULT_INVOICES: InvoiceRecord[] = [
   {
@@ -82,6 +88,10 @@ export default function BillingSettingsPage() {
   const [savingBilling, setSavingBilling] = useState(false);
   const [savingPayment, setSavingPayment] = useState(false);
   const [updatingPlan, setUpdatingPlan] = useState<PlanId | null>(null);
+  const [seatAddonsInput, setSeatAddonsInput] = useState("0");
+  const [savingSeats, setSavingSeats] = useState(false);
+  const [seatSuccess, setSeatSuccess] = useState<string | null>(null);
+  const [seatError, setSeatError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!currentOrganization) {
@@ -98,6 +108,7 @@ export default function BillingSettingsPage() {
     setCity(billing.contact?.city ?? "");
     setCountry(billing.contact?.country ?? "");
     setPurchaseOrder(billing.contact?.purchaseOrder ?? "");
+    setSeatAddonsInput((billing.seatAddons?.quantity ?? 0).toString());
 
     if (billing.paymentMethod) {
       setCardBrand(billing.paymentMethod.brand);
@@ -114,6 +125,27 @@ export default function BillingSettingsPage() {
 
     return currentOrganization.billing.invoices;
   }, [currentOrganization]);
+
+  const seatPolicy = useMemo(() => {
+    if (!currentOrganization) {
+      return null;
+    }
+
+    return getPlanSeatPolicy(currentOrganization.plan);
+  }, [currentOrganization]);
+
+  const activeMembers = currentOrganization?.members?.length ?? 0;
+  const includedSeats = seatPolicy?.includedSeats ?? null;
+  const additionalSeatsPurchased = currentOrganization?.billing?.seatAddons?.quantity ?? 0;
+  const seatLimit = seatPolicy
+    ? getPlanSeatLimit(currentOrganization.plan, additionalSeatsPurchased)
+    : null;
+  const additionalSeatsUsed = includedSeats === null ? 0 : Math.max(0, activeMembers - includedSeats);
+  const seatsAvailable = seatLimit === null ? null : Math.max(0, seatLimit - activeMembers);
+  const seatIntervalLabel = seatPolicy?.addOn?.interval === "yearly" ? "an" : "mois";
+  const seatAddonEstimate = seatPolicy?.addOn?.pricePerSeat != null
+    ? seatPolicy.addOn.pricePerSeat * (Number.parseInt(seatAddonsInput || "0", 10) || 0)
+    : null;
 
   if (!currentOrganization) {
     return (
@@ -187,6 +219,63 @@ export default function BillingSettingsPage() {
       setPaymentError(message);
     } finally {
       setSavingPayment(false);
+    }
+  };
+
+  const handleSaveSeatAddons = async () => {
+    if (!currentOrganization) {
+      return;
+    }
+
+    setSavingSeats(true);
+    setSeatSuccess(null);
+    setSeatError(null);
+
+    try {
+      if (!seatPolicy?.addOn) {
+        throw new Error(
+          "Les sièges additionnels ne sont pas disponibles pour ce plan.",
+        );
+      }
+
+      const normalizedInput = seatAddonsInput.trim();
+      const quantity = normalizedInput === ""
+        ? 0
+        : Number.parseInt(normalizedInput, 10);
+
+      if (Number.isNaN(quantity) || quantity < 0) {
+        throw new Error("Veuillez saisir un nombre de sièges additionnels valide.");
+      }
+
+      if (includedSeats !== null && quantity < additionalSeatsUsed) {
+        throw new Error(
+          `Vous utilisez actuellement ${additionalSeatsUsed} siège(s) additionnel(s). Réduisez les membres avant de diminuer le quota.`,
+        );
+      }
+
+      const nextBilling: BillingSettings = {
+        ...currentOrganization.billing,
+        seatAddons: {
+          quantity,
+          currency: seatPolicy.addOn.currency,
+          interval: seatPolicy.addOn.interval,
+          pricePerSeat: seatPolicy.addOn.pricePerSeat,
+          description: seatPolicy.addOn.description,
+          updatedAt: new Date().toISOString(),
+        },
+      };
+
+      await updateCurrentOrganization({ billing: nextBilling });
+      setSeatAddonsInput(quantity.toString());
+      setSeatSuccess("Nombre de sièges mis à jour.");
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Impossible de mettre à jour les sièges.";
+      setSeatError(message);
+    } finally {
+      setSavingSeats(false);
     }
   };
 
@@ -406,25 +495,110 @@ export default function BillingSettingsPage() {
                   </p>
                 </div>
               )}
-            </CardContent>
+          </CardContent>
+          <CardFooter className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-sm text-muted-foreground">
+              Les paiements sont sécurisés via notre prestataire Stripe.
+            </div>
+            <div className="space-y-1 text-right">
+              <Button onClick={handleSavePaymentMethod} disabled={savingPayment}>
+                {savingPayment ? "Enregistrement..." : "Mettre à jour"}
+              </Button>
+              {paymentSuccess && <p className="text-xs text-green-600">{paymentSuccess}</p>}
+              {paymentError && <p className="text-xs text-destructive">{paymentError}</p>}
+            </div>
+          </CardFooter>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Gestion des sièges</CardTitle>
+            <CardDescription>
+              Ajustez le quota de membres inclus dans votre espace.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="rounded-md border bg-muted/40 p-4">
+                <p className="text-sm text-muted-foreground">Membres actifs</p>
+                <p className="mt-1 text-2xl font-semibold">{activeMembers}</p>
+              </div>
+              <div className="rounded-md border bg-muted/40 p-4">
+                <p className="text-sm text-muted-foreground">Sièges disponibles</p>
+                <p className="mt-1 text-2xl font-semibold">
+                  {seatLimit === null ? "Illimités" : seatsAvailable}
+                </p>
+              </div>
+            </div>
+            {includedSeats !== null && (
+              <div className="rounded-md border border-dashed p-4 text-sm leading-relaxed">
+                <p>
+                  Pack de base : {includedSeats} siège(s) inclus
+                  {seatPolicy?.addOn
+                    ? ` · ${additionalSeatsPurchased} siège(s) additionnel(s)`
+                    : ""}
+                </p>
+                {seatPolicy?.addOn?.pricePerSeat != null ? (
+                  <p className="text-muted-foreground">
+                    Siège supplémentaire : {formatter.format(seatPolicy.addOn.pricePerSeat)} / {seatIntervalLabel}
+                  </p>
+                ) : seatPolicy?.addOn?.description ? (
+                  <p className="text-muted-foreground">{seatPolicy.addOn.description}</p>
+                ) : null}
+              </div>
+            )}
+            {seatPolicy?.addOn ? (
+              <div className="space-y-2">
+                <Label htmlFor="seat-addons">Sièges additionnels</Label>
+                <Input
+                  id="seat-addons"
+                  type="number"
+                  min={additionalSeatsUsed}
+                  step={1}
+                  value={seatAddonsInput}
+                  onChange={(event) =>
+                    setSeatAddonsInput(event.target.value.replace(/[^0-9]/g, ""))
+                  }
+                />
+                <p className="text-xs text-muted-foreground">
+                  {additionalSeatsUsed > 0
+                    ? `Vous utilisez ${additionalSeatsUsed} siège(s) additionnel(s).`
+                    : "Les sièges additionnels sont facturés uniquement au-delà du pack inclus."}
+                </p>
+                {seatAddonEstimate !== null && (
+                  <p className="text-xs text-muted-foreground">
+                    Estimation : {formatter.format(seatAddonEstimate)} / {seatIntervalLabel}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="rounded-md border border-dashed bg-muted/30 p-4 text-sm text-muted-foreground">
+                Ajoutez davantage de membres en passant au plan Pro.
+              </div>
+            )}
+          </CardContent>
+          {seatPolicy?.addOn && (
             <CardFooter className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-sm text-muted-foreground">
-                Les paiements sont sécurisés via notre prestataire Stripe.
+                {seatPolicy.addOn.pricePerSeat != null
+                  ? `Facturation supplémentaire : ${formatter.format(seatPolicy.addOn.pricePerSeat)} / siège / ${seatIntervalLabel}.`
+                  : seatPolicy.addOn.description}
               </div>
               <div className="space-y-1 text-right">
-                <Button onClick={handleSavePaymentMethod} disabled={savingPayment}>
-                  {savingPayment ? "Enregistrement..." : "Mettre à jour"}
+                <Button onClick={handleSaveSeatAddons} disabled={savingSeats}>
+                  {savingSeats ? "Enregistrement..." : "Mettre à jour"}
                 </Button>
-                {paymentSuccess && <p className="text-xs text-green-600">{paymentSuccess}</p>}
-                {paymentError && <p className="text-xs text-destructive">{paymentError}</p>}
+                {seatSuccess && <p className="text-xs text-green-600">{seatSuccess}</p>}
+                {seatError && <p className="text-xs text-destructive">{seatError}</p>}
               </div>
             </CardFooter>
-          </Card>
+          )}
+        </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Historique des factures</CardTitle>
-              <CardDescription>
+        <Card>
+          <CardHeader>
+            <CardTitle>Historique des factures</CardTitle>
+            <CardDescription>
                 Téléchargez vos factures passées et vérifiez leur statut.
               </CardDescription>
             </CardHeader>
@@ -510,6 +684,14 @@ export default function BillingSettingsPage() {
                             <li key={perk}>{perk}</li>
                           ))}
                         </ul>
+                        {plan.seatSummary && (
+                          <div className="rounded-md border border-dashed bg-muted/30 p-3 text-xs leading-relaxed">
+                            <p className="font-medium text-foreground">{plan.seatSummary.included}</p>
+                            {plan.seatSummary.additional && (
+                              <p className="text-muted-foreground">{plan.seatSummary.additional}</p>
+                            )}
+                          </div>
+                        )}
                         <Button
                           disabled={isCurrent || isLoading}
                           onClick={() => handleSelectPlan(plan.id as PlanId)}

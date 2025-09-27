@@ -50,6 +50,10 @@ export default function Team() {
     error,
     isAtLimit,
     limit,
+    includedSeats,
+    additionalSeatsPurchased,
+    remainingSeats,
+    seatPolicy,
     inviteMember,
     removeMember,
     refresh,
@@ -159,13 +163,29 @@ export default function Team() {
           {error && (
             <p className="text-sm text-destructive">{error}</p>
           )}
-          {limit !== null && (
-            <p className="text-xs text-muted-foreground">
-              {members.length} membre(s) sur {limit} autorisé(s) par le plan
-              {" "}
-              {PLAN_LABELS[currentOrganization.plan]}.
-            </p>
-          )}
+          <div className="space-y-1 text-xs text-muted-foreground">
+            {limit !== null ? (
+              <p>
+                {members.length} membre(s) sur {limit} siège(s) autorisé(s) par le plan{" "}
+                {PLAN_LABELS[currentOrganization.plan]}.
+              </p>
+            ) : (
+              <p>
+                Nombre de membres illimité avec le plan {PLAN_LABELS[currentOrganization.plan]}.
+              </p>
+            )}
+            {includedSeats !== null && (
+              <p>
+                Pack de base : {includedSeats} siège(s) inclus
+                {seatPolicy?.addOn
+                  ? ` · ${additionalSeatsPurchased} siège(s) additionnel(s)`
+                  : ""}
+                {remainingSeats !== null
+                  ? ` · ${remainingSeats} siège(s) disponibles`
+                  : ""}
+              </p>
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -203,8 +223,7 @@ export default function Team() {
           </div>
           {isAtLimit && (
             <p className="text-sm text-destructive">
-              Limite atteinte avec votre plan actuel. Mettez à niveau votre plan
-              pour inviter davantage de membres.
+              Limite atteinte : ajoutez des sièges supplémentaires depuis la facturation ou changez de plan pour inviter davantage de membres.
             </p>
           )}
           <Button
