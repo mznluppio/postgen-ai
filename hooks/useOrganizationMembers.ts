@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Models } from "appwrite";
 
 import { authService, Organization } from "@/lib/auth";
-import { getPlanLimit } from "@/lib/plans";
+import { getPlanSeatLimit, getPlanSeatPolicy } from "@/lib/plans";
 
 type Options = {
   onTeamResolved?: (teamId: string) => void | Promise<void>;
@@ -66,10 +66,23 @@ export function useOrganizationMembers(
     fetchMembers();
   }, [fetchMembers]);
 
+  const seatPolicy = useMemo(() => {
+    if (!organization) return null;
+    return getPlanSeatPolicy(organization.plan);
+  }, [organization]);
+
+  const additionalSeatsPurchased = useMemo(() => {
+    if (!organization?.billing?.seatAddons) {
+      return 0;
+    }
+
+    return Math.max(0, organization.billing.seatAddons.quantity ?? 0);
+  }, [organization?.billing?.seatAddons]);
+
   const limit = useMemo(() => {
     if (!organization) return null;
-    return getPlanLimit(organization.plan);
-  }, [organization]);
+    return getPlanSeatLimit(organization.plan, additionalSeatsPurchased);
+  }, [additionalSeatsPurchased, organization]);
 
   const isAtLimit = useMemo(() => {
     if (limit === null) {
@@ -77,6 +90,30 @@ export function useOrganizationMembers(
     }
 
     return members.length >= limit;
+  }, [limit, members.length]);
+
+  const includedSeats = useMemo(() => {
+    if (!seatPolicy) {
+      return null;
+    }
+
+    return seatPolicy.includedSeats;
+  }, [seatPolicy]);
+
+  const additionalSeatsUsed = useMemo(() => {
+    if (!seatPolicy || seatPolicy.includedSeats === null) {
+      return 0;
+    }
+
+    return Math.max(0, members.length - seatPolicy.includedSeats);
+  }, [members.length, seatPolicy]);
+
+  const remainingSeats = useMemo(() => {
+    if (limit === null) {
+      return null;
+    }
+
+    return Math.max(0, limit - members.length);
   }, [limit, members.length]);
 
   const inviteMember = useCallback(
@@ -90,6 +127,12 @@ export function useOrganizationMembers(
       }
 
       if (limit !== null && members.length >= limit) {
+        if (seatPolicy?.addOn) {
+          throw new Error(
+            "Le quota de sièges est atteint. Ajoutez des sièges supplémentaires depuis la facturation.",
+          );
+        }
+
         throw new Error("La limite de membres du plan est atteinte");
       }
 
@@ -111,7 +154,7 @@ export function useOrganizationMembers(
 
       return membership;
     },
-    [ensureTeam, limit, members.length, organization],
+    [ensureTeam, limit, members.length, organization, seatPolicy],
   );
 
   const removeMember = useCallback(
@@ -132,6 +175,11 @@ export function useOrganizationMembers(
     loading,
     error,
     limit,
+    seatPolicy,
+    includedSeats,
+    additionalSeatsPurchased,
+    additionalSeatsUsed,
+    remainingSeats,
     isAtLimit,
     inviteMember,
     removeMember,

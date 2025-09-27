@@ -7,7 +7,7 @@ import {
 } from "./appwrite-config";
 import { ID, Query } from "appwrite";
 import type { Models } from "appwrite";
-import { getPlanLimit } from "./plans";
+import { getPlanSeatLimit, getPlanSeatPolicy } from "./plans";
 
 export interface CommunicationPreferences {
   productUpdates: boolean;
@@ -48,12 +48,22 @@ export interface InvoiceRecord {
   downloadUrl?: string;
 }
 
+export interface SeatAddonSettings {
+  quantity: number;
+  currency: string;
+  interval: "monthly" | "yearly";
+  pricePerSeat?: number;
+  description?: string;
+  updatedAt?: string;
+}
+
 export interface BillingSettings {
   billingEmail?: string;
   contact?: BillingContact;
   paymentMethod?: PaymentMethodDetails | null;
   planRenewalDate?: string;
   invoices?: InvoiceRecord[];
+  seatAddons?: SeatAddonSettings | null;
 }
 
 export interface User {
@@ -298,6 +308,8 @@ export class AuthService {
 
       const team = await teams.create(ID.unique(), name, ["owner"]);
 
+      const seatPolicy = getPlanSeatPolicy(plan);
+
       const organization = await databases.createDocument(
         databaseId,
         COLLECTIONS.ORGANIZATIONS,
@@ -336,6 +348,16 @@ export class AuthService {
               Date.now() + 30 * 24 * 60 * 60 * 1000,
             ).toISOString(),
             invoices: [],
+            seatAddons: seatPolicy.addOn
+              ? {
+                  quantity: 0,
+                  currency: seatPolicy.addOn.currency,
+                  interval: seatPolicy.addOn.interval,
+                  pricePerSeat: seatPolicy.addOn.pricePerSeat,
+                  description: seatPolicy.addOn.description,
+                  updatedAt: new Date().toISOString(),
+                }
+              : null,
           },
           ideaBacklog: [],
           editorialCalendar: [],
@@ -512,8 +534,12 @@ export class AuthService {
         .map((membership) => membership.userId)
         .filter(Boolean);
 
-      const limit = getPlanLimit(
-        (await this.getOrganization(organizationId))?.plan || "starter",
+      const organization = (await this.getOrganization(
+        organizationId,
+      )) as Organization;
+      const limit = getPlanSeatLimit(
+        organization?.plan || "starter",
+        organization?.billing?.seatAddons?.quantity ?? 0,
       );
 
       await this.updateOrganization(organizationId, {
