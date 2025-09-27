@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
   CalendarDays,
@@ -8,6 +9,8 @@ import {
   Megaphone,
   Trash2,
   Plus,
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
 
 import { AuthGuard } from "@/components/auth/AuthGuard";
@@ -20,6 +23,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,6 +39,8 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthPage from "@/app/auth/page";
+import { useFeatureGate } from "@/hooks/useFeatureGate";
+import { formatList } from "@/lib/feature-gates";
 import type { EditorialCalendarEntry, EditorialCalendarStatus } from "@/lib/auth";
 
 const STATUS_OPTIONS: { value: EditorialCalendarStatus; label: string }[] = [
@@ -80,6 +86,12 @@ interface NewEntryForm {
 export default function EditorialCalendarPage() {
   const { currentOrganization, updateCurrentOrganization } = useAuth();
   const { toast } = useToast();
+  const calendarGate = useFeatureGate("calendar");
+  const integrationRequirementText = formatList(
+    calendarGate.missingIntegrationLabels.length
+      ? calendarGate.missingIntegrationLabels
+      : calendarGate.requiredIntegrationLabels,
+  );
   const [entries, setEntries] = useState<EditorialCalendarEntry[]>([]);
   const [saving, setSaving] = useState(false);
   const [newEntry, setNewEntry] = useState<NewEntryForm>({
@@ -244,6 +256,72 @@ export default function EditorialCalendarPage() {
           </Card>
         </div>
       </AuthGuard>
+    );
+  }
+
+  if (calendarGate.loading) {
+    return (
+      <div className="flex items-center justify-center p-6">
+        <div className="flex items-center gap-2 rounded-lg border bg-card p-6 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span>Vérification des prérequis…</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (calendarGate.error) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Impossible de vérifier les accès</CardTitle>
+            <CardDescription>{calendarGate.error}</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!calendarGate.hasPlanAccess) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Disponible avec le plan supérieur</CardTitle>
+            <CardDescription>
+              {calendarGate.requiredPlanLabel
+                ? `Passez au plan ${calendarGate.requiredPlanLabel} pour activer la planification avancée.`
+                : "Mettez à niveau votre offre pour activer la planification avancée."}
+            </CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Button asChild>
+              <Link href="/dashboard/settings/organization">Mettre à niveau</Link>
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!calendarGate.hasRequiredIntegrations) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Connectez vos canaux de publication</CardTitle>
+            <CardDescription>
+              Ajoutez {integrationRequirementText || "vos canaux principaux"} dans les intégrations pour planifier automatiquement vos contenus.
+            </CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Button asChild>
+              <Link href="/dashboard/settings/integrations">Configurer les intégrations</Link>
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
     );
   }
 

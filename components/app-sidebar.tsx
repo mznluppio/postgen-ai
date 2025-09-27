@@ -25,29 +25,98 @@ import {
   organizationSettings,
 } from "@/lib/navigation-data"
 import { useOrganizationIntegrations } from "@/hooks/useOrganizationIntegrations"
+import {
+  evaluateFeatureAvailability,
+  formatIntegrationIds,
+} from "@/lib/feature-gates"
+import { PLAN_LABELS, type Plan } from "@/lib/plans"
 
 export function AppSidebar() {
   const { user, currentOrganization } = useAuth()
-  const { activeCount } = useOrganizationIntegrations(currentOrganization)
+  const integrationState = useOrganizationIntegrations(currentOrganization)
+  const { activeCount } = integrationState
+  const plan = (currentOrganization?.plan ?? "starter") as Plan
 
-  const settingsNavigation = React.useMemo(
-    () =>
-      organizationSettings.map((item) => {
-        if (item.url === "/dashboard/settings/integrations") {
-          const badge =
-            activeCount > 0
-              ? `${activeCount} connecté${activeCount > 1 ? "s" : ""}`
-              : undefined
+  const enhanceNavigation = React.useCallback(
+    (items: typeof mainNavigation) =>
+      items.map((item) => {
+        const enhanced = { ...item }
 
-          return {
-            ...item,
-            badge,
+        if (item.items?.length) {
+          enhanced.items = enhanceNavigation(item.items)
+        }
+
+        if (item.minimumPlan || item.requiresIntegrations) {
+          const evaluation = evaluateFeatureAvailability(plan, integrationState.integrations, {
+            minimumPlan: item.minimumPlan,
+            requiredIntegrations: item.requiresIntegrations,
+          })
+
+          const reasons: string[] = []
+
+          if (!evaluation.hasPlanAccess && item.minimumPlan) {
+            reasons.push(`Disponible avec le plan ${PLAN_LABELS[item.minimumPlan]}`)
+          }
+
+          if (!evaluation.hasRequiredIntegrations && item.requiresIntegrations?.length) {
+            const requirementText = formatIntegrationIds(
+              evaluation.missingIntegrations.length
+                ? evaluation.missingIntegrations
+                : item.requiresIntegrations,
+            )
+            if (requirementText) {
+              reasons.push(`Connectez ${requirementText} dans les intégrations`)
+            }
+          }
+
+          enhanced.disabled = Boolean(enhanced.disabled || !evaluation.hasAccess)
+          if (reasons.length) {
+            enhanced.tooltip = reasons.join(". ")
+          }
+
+          if (!item.badge && enhanced.disabled && item.minimumPlan) {
+            enhanced.badge = `${PLAN_LABELS[item.minimumPlan]}+`
           }
         }
 
-        return item
+        return enhanced
       }),
-    [activeCount],
+    [integrationState.integrations, plan],
+  )
+
+  const settingsNavigation = React.useMemo(() => {
+    const base = organizationSettings.map((item) => {
+      if (item.url === "/dashboard/settings/integrations") {
+        const badge =
+          activeCount > 0
+            ? `${activeCount} connecté${activeCount > 1 ? "s" : ""}`
+            : undefined
+
+        return {
+          ...item,
+          badge,
+        }
+      }
+
+      return item
+    })
+
+    return enhanceNavigation(base)
+  }, [activeCount, enhanceNavigation])
+
+  const gatedMainNavigation = React.useMemo(
+    () => enhanceNavigation(mainNavigation),
+    [enhanceNavigation],
+  )
+
+  const gatedManagementTools = React.useMemo(
+    () => enhanceNavigation(managementTools),
+    [enhanceNavigation],
+  )
+
+  const gatedContentCreation = React.useMemo(
+    () => enhanceNavigation(contentCreation),
+    [enhanceNavigation],
   )
 
   if (!user) return null
@@ -67,7 +136,7 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel>Principal</SidebarGroupLabel>
           <SidebarGroupContent>
-            <NavigationSection items={mainNavigation} />
+            <NavigationSection items={gatedMainNavigation} />
           </SidebarGroupContent>
         </SidebarGroup>
 
@@ -75,7 +144,7 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel>Création de contenu</SidebarGroupLabel>
           <SidebarGroupContent>
-            <NavigationSection items={contentCreation} defaultOpen={["Social Media"]} />
+            <NavigationSection items={gatedContentCreation} defaultOpen={["Social Media"]} />
           </SidebarGroupContent>
         </SidebarGroup>
 
@@ -83,7 +152,7 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel>Outils & Gestion</SidebarGroupLabel>
           <SidebarGroupContent>
-            <NavigationSection items={managementTools} />
+            <NavigationSection items={gatedManagementTools} />
           </SidebarGroupContent>
         </SidebarGroup>
 

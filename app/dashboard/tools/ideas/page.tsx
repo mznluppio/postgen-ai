@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { Lightbulb, Plus, Target, Trash2, Trophy } from "lucide-react";
+import { Lightbulb, Plus, Target, Trash2, Trophy, Loader2 } from "lucide-react";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { AuthGuard } from "@/components/auth/AuthGuard";
@@ -11,6 +12,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -29,6 +31,7 @@ import {
 import AuthPage from "@/app/auth/page";
 import { useToast } from "@/hooks/use-toast";
 import type { IdeaBacklogItem } from "@/lib/auth";
+import { useFeatureGate } from "@/hooks/useFeatureGate";
 
 const STATUS_OPTIONS: { value: NonNullable<IdeaBacklogItem["status"]>; label: string }[] = [
   { value: "new", label: "À explorer" },
@@ -88,6 +91,7 @@ interface NewIdeaForm {
 export default function IdeasBacklogPage() {
   const { currentOrganization, updateCurrentOrganization } = useAuth();
   const { toast } = useToast();
+  const ideasGate = useFeatureGate("ideas");
   const [ideas, setIdeas] = useState<IdeaBacklogItem[]>([]);
   const [saving, setSaving] = useState(false);
   const [newIdea, setNewIdea] = useState<NewIdeaForm>({
@@ -238,6 +242,52 @@ export default function IdeasBacklogPage() {
     );
   }
 
+  if (ideasGate.loading) {
+    return (
+      <div className="flex items-center justify-center p-6">
+        <div className="flex items-center gap-2 rounded-lg border bg-card p-6 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span>Vérification des prérequis…</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (ideasGate.error) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Impossible de charger le backlog</CardTitle>
+            <CardDescription>{ideasGate.error}</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!ideasGate.hasAccess) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Disponible avec votre plan</CardTitle>
+            <CardDescription>
+              {ideasGate.requiredPlanLabel
+                ? `Passez au plan ${ideasGate.requiredPlanLabel} pour activer le backlog d'idées.`
+                : "Mettez à niveau votre offre pour activer le backlog d'idées."}
+            </CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Button asChild>
+              <Link href="/dashboard/settings/organization">Mettre à niveau</Link>
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -252,41 +302,41 @@ export default function IdeasBacklogPage() {
         </Button>
       </div>
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <DashboardStatCard
-            title="Total d'idées"
-            value={ideas.length}
-            subtitle={ideas.length ? "Idées enregistrées" : "Ajoutez votre première idée"}
-            icon={Lightbulb}
-          />
-          <DashboardStatCard
-            title="Idées en cours"
-            value={statusCounts["in-progress"] ?? 0}
-            subtitle="Suivi opérationnel"
-            icon={Target}
-          />
-          <DashboardStatCard
-            title="Idées prêtes"
-            value={statusCounts["approved"] ?? 0}
-            subtitle="Prêtes à passer en production"
-            icon={Trophy}
-          />
-          <DashboardStatCard title="Canaux clés">
-            {recommendedChannels.length ? (
-              <div className="flex flex-wrap gap-2">
-                {recommendedChannels.map((channel) => (
-                  <Badge key={channel} variant="secondary">
-                    {channel}
-                  </Badge>
-                ))}
-              </div>
-            ) : (
-              <p className="text-xs text-muted-foreground">
-                Aucun canal dominant identifié pour le moment.
-              </p>
-            )}
-          </DashboardStatCard>
-        </div>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <DashboardStatCard
+          title="Total d'idées"
+          value={ideas.length}
+          subtitle={ideas.length ? "Idées enregistrées" : "Ajoutez votre première idée"}
+          icon={Lightbulb}
+        />
+        <DashboardStatCard
+          title="Idées en cours"
+          value={statusCounts["in-progress"] ?? 0}
+          subtitle="Suivi opérationnel"
+          icon={Target}
+        />
+        <DashboardStatCard
+          title="Idées prêtes"
+          value={statusCounts["approved"] ?? 0}
+          subtitle="Prêtes à passer en production"
+          icon={Trophy}
+        />
+        <DashboardStatCard title="Canaux clés">
+          {recommendedChannels.length ? (
+            <div className="flex flex-wrap gap-2">
+              {recommendedChannels.map((channel) => (
+                <Badge key={channel} variant="secondary">
+                  {channel}
+                </Badge>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Aucun canal dominant identifié pour le moment.
+            </p>
+          )}
+        </DashboardStatCard>
+      </div>
 
       <Card>
         <CardHeader>

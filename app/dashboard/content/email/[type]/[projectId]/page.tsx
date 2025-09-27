@@ -42,6 +42,8 @@ import {
 } from "@/lib/email-content";
 import { Briefcase, Copy, Trash2, Code2, Mail } from "lucide-react";
 import { motion } from "framer-motion";
+import { useFeatureGate } from "@/hooks/useFeatureGate";
+import { formatList } from "@/lib/feature-gates";
 
 interface EmailContentState {
   body: string;
@@ -114,12 +116,47 @@ export default function EmailContentPage() {
   const [pendingEmail, setPendingEmail] = useState<EmailContentState | null>(
     null,
   );
+  const automationGate = useFeatureGate("automation");
+
+  const automationDisabled =
+    automationGate.loading || Boolean(automationGate.error) || !automationGate.hasAccess;
+
+  const automationDisableReason = useMemo(() => {
+    if (automationGate.loading) {
+      return undefined;
+    }
+    if (automationGate.error) {
+      return automationGate.error;
+    }
+    if (!automationGate.hasPlanAccess) {
+      return automationGate.requiredPlanLabel
+        ? `Disponible avec le plan ${automationGate.requiredPlanLabel}`
+        : "Mettez à niveau votre offre pour activer la planification.";
+    }
+    if (!automationGate.hasRequiredIntegrations) {
+      const requirementText = formatList(
+        automationGate.missingIntegrationLabels.length
+          ? automationGate.missingIntegrationLabels
+          : automationGate.requiredIntegrationLabels,
+      );
+      return requirementText
+        ? `Connectez ${requirementText} dans les intégrations pour planifier vos campagnes.`
+        : "Configurez vos intégrations pour activer la planification.";
+    }
+    return undefined;
+  }, [automationGate]);
 
   useEffect(() => {
     if (selectedChannels.length === 0 && automationEnabled) {
       setAutomationEnabled(false);
     }
   }, [selectedChannels, automationEnabled]);
+
+  useEffect(() => {
+    if (automationDisabled && automationEnabled) {
+      setAutomationEnabled(false);
+    }
+  }, [automationDisabled, automationEnabled]);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -407,6 +444,9 @@ Génère une campagne email de type "${emailType?.title ?? type}" en lien avec c
         onScheduledAtChange={setScheduledAt}
         automationEnabled={automationEnabled}
         onAutomationChange={setAutomationEnabled}
+        disabled={automationDisabled}
+        disableReason={automationDisableReason}
+        loading={automationGate.loading}
       />
 
       <ContentGenerator

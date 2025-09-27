@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { Users, Target, BarChart3, MessageCircle, Trash2, Plus } from "lucide-react";
+import { Users, Target, BarChart3, MessageCircle, Trash2, Plus, Loader2 } from "lucide-react";
 
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import { DashboardEditableListSection } from "@/components/dashboard/DashboardEditableListSection";
@@ -13,6 +14,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,6 +30,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthPage from "@/app/auth/page";
+import { useFeatureGate } from "@/hooks/useFeatureGate";
 import type { AudiencePersona } from "@/lib/auth";
 
 const STAGE_OPTIONS: { value: NonNullable<AudiencePersona["stage"]>; label: string }[] = [
@@ -65,6 +68,7 @@ interface NewPersonaForm {
 export default function AudiencePersonasPage() {
   const { currentOrganization, updateCurrentOrganization } = useAuth();
   const { toast } = useToast();
+  const audienceGate = useFeatureGate("audiences");
   const [personas, setPersonas] = useState<AudiencePersona[]>([]);
   const [saving, setSaving] = useState(false);
   const [newPersona, setNewPersona] = useState<NewPersonaForm>({
@@ -208,6 +212,52 @@ export default function AudiencePersonasPage() {
           </Card>
         </div>
       </AuthGuard>
+    );
+  }
+
+  if (audienceGate.loading) {
+    return (
+      <div className="flex items-center justify-center p-6">
+        <div className="flex items-center gap-2 rounded-lg border bg-card p-6 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span>Vérification des prérequis…</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (audienceGate.error) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Impossible de charger l'outil</CardTitle>
+            <CardDescription>{audienceGate.error}</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!audienceGate.hasPlanAccess) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Réservé aux plans supérieurs</CardTitle>
+            <CardDescription>
+              {audienceGate.requiredPlanLabel
+                ? `Passez au plan ${audienceGate.requiredPlanLabel} pour activer la cartographie des audiences.`
+                : "Mettez à niveau votre offre pour activer la cartographie des audiences."}
+            </CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Button asChild>
+              <Link href="/dashboard/settings/organization">Mettre à niveau</Link>
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
     );
   }
 

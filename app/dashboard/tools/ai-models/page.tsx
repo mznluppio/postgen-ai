@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { Cpu, Activity, Workflow, RefreshCw, Trash2, Plus } from "lucide-react";
+import { Cpu, Activity, Workflow, RefreshCw, Trash2, Plus, Loader2 } from "lucide-react";
 
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import { DashboardEditableListSection } from "@/components/dashboard/DashboardEditableListSection";
@@ -13,6 +14,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,6 +30,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthPage from "@/app/auth/page";
+import { useFeatureGate } from "@/hooks/useFeatureGate";
 import type { AIModelConfig } from "@/lib/auth";
 
 const PROVIDER_OPTIONS = ["OpenAI", "Anthropic", "Mistral", "Cohere", "Custom"] as const;
@@ -61,6 +64,7 @@ interface NewModelForm {
 export default function AIModelsPage() {
   const { currentOrganization, updateCurrentOrganization } = useAuth();
   const { toast } = useToast();
+  const aiModelsGate = useFeatureGate("aiModels");
   const [models, setModels] = useState<AIModelConfig[]>([]);
   const [saving, setSaving] = useState(false);
   const [newModel, setNewModel] = useState<NewModelForm>({
@@ -208,6 +212,52 @@ export default function AIModelsPage() {
           </Card>
         </div>
       </AuthGuard>
+    );
+  }
+
+  if (aiModelsGate.loading) {
+    return (
+      <div className="flex items-center justify-center p-6">
+        <div className="flex items-center gap-2 rounded-lg border bg-card p-6 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span>Vérification des prérequis…</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (aiModelsGate.error) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Impossible de charger l'atelier IA</CardTitle>
+            <CardDescription>{aiModelsGate.error}</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!aiModelsGate.hasPlanAccess) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Disponible avec le plan Enterprise</CardTitle>
+            <CardDescription>
+              {aiModelsGate.requiredPlanLabel
+                ? `Passez au plan ${aiModelsGate.requiredPlanLabel} pour gérer vos modèles avancés.`
+                : "Mettez à niveau votre offre pour gérer vos modèles avancés."}
+            </CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Button asChild>
+              <Link href="/dashboard/settings/organization">Mettre à niveau</Link>
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
     );
   }
 

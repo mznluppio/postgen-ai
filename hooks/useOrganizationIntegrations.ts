@@ -8,7 +8,7 @@ import {
   integrationService,
 } from "@/lib/integrations";
 
-interface UseOrganizationIntegrationsResult {
+export interface UseOrganizationIntegrationsResult {
   integrations: IntegrationDocument[];
   loading: boolean;
   error: string | null;

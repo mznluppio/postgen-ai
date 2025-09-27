@@ -8,6 +8,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -33,6 +34,7 @@ import { CreateOrganizationDialog } from "@/components/dashboard/CreateOrganizat
 import AuthPage from "../auth/page";
 import { useEngagementInsights } from "@/hooks/useEngagementInsights";
 import { useAnalyticsAvailability } from "@/hooks/useAnalyticsAvailability";
+import { formatList } from "@/lib/feature-gates";
 import { AnalyticsSummaryCards } from "@/components/dashboard/AnalyticsSummaryCards";
 import { EngagementPerformanceChart } from "@/components/dashboard/EngagementPerformanceChart";
 import { TopContentTable } from "@/components/dashboard/TopContentTable";
@@ -50,9 +52,13 @@ export default function Dashboard() {
   } = useEngagementInsights();
   const {
     hasAnalyticsAccess,
+    hasPlanAccess,
+    requiredPlanLabel,
+    currentPlanLabel,
     loading: loadingIntegrations,
     error: integrationsError,
     requiredIntegrationLabels,
+    missingIntegrationLabels,
   } = useAnalyticsAvailability();
   const [recommendations, setRecommendations] = useState<string[]>([]);
   const [loadingRecommendations, setLoadingRecommendations] = useState(false);
@@ -119,6 +125,12 @@ export default function Dashboard() {
   const compliance = currentOrganization.compliance;
   const isEnterprise = currentOrganization.plan === "enterprise";
 
+  const integrationRequirementText = formatList(
+    (missingIntegrationLabels?.length ?? 0) > 0
+      ? missingIntegrationLabels ?? []
+      : requiredIntegrationLabels ?? [],
+  );
+
   const benchmark = insights?.planBenchmark;
   const weeklyProgress = benchmark?.weeklyViewTarget
     ? Math.min(
@@ -176,6 +188,22 @@ export default function Dashboard() {
           <Loader2 className="h-4 w-4 animate-spin" />
           <span>Vérification des intégrations…</span>
         </div>
+      ) : !hasPlanAccess ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Mettez à niveau votre plan</CardTitle>
+            <CardDescription>
+              Votre plan {currentPlanLabel} ne comprend pas les analytics. {requiredPlanLabel
+                ? `Passez au plan ${requiredPlanLabel} pour débloquer les rapports et recommandations.`
+                : "Mettez à niveau votre offre pour accéder aux rapports et recommandations."}
+            </CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Button asChild>
+              <Link href="/dashboard/settings/organization">Mettre à niveau</Link>
+            </Button>
+          </CardFooter>
+        </Card>
       ) : hasAnalyticsAccess ? (
         <>
           <AnalyticsSummaryCards cards={insights?.summaryCards ?? []} />
@@ -235,23 +263,19 @@ export default function Dashboard() {
           />
         </>
       ) : (
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Activez l'analytics</AlertTitle>
-          <AlertDescription>
-            <div className="flex flex-col gap-2">
-              <span>
-                Connectez au moins une intégration ({requiredIntegrationLabels.join(", ")})
-                pour débloquer les métriques.
-              </span>
-              <Button asChild variant="outline" size="sm" className="w-fit">
-                <Link href="/dashboard/settings/integrations">
-                  Configurer les intégrations
-                </Link>
-              </Button>
-            </div>
-          </AlertDescription>
-        </Alert>
+        <Card>
+          <CardHeader>
+            <CardTitle>Connectez vos canaux sociaux</CardTitle>
+            <CardDescription>
+              Ajoutez vos clés {integrationRequirementText} dans les intégrations pour débloquer les analytics.
+            </CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Button asChild>
+              <Link href="/dashboard/settings/integrations">Configurer mes intégrations</Link>
+            </Button>
+          </CardFooter>
+        </Card>
       )}
 
       <Card>
@@ -406,3 +430,4 @@ export default function Dashboard() {
     </div>
   );
 }
+

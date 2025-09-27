@@ -1,7 +1,16 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { Palette, Sparkles, PenSquare, FolderCog, Trash2, Plus } from "lucide-react";
+import {
+  Palette,
+  Sparkles,
+  PenSquare,
+  FolderCog,
+  Trash2,
+  Plus,
+  Loader2,
+} from "lucide-react";
 
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import { DashboardEditableListSection } from "@/components/dashboard/DashboardEditableListSection";
@@ -11,6 +20,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -28,6 +38,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthPage from "@/app/auth/page";
+import { useFeatureGate } from "@/hooks/useFeatureGate";
 import type { BrandGuideline, BrandGuidelineCategory } from "@/lib/auth";
 
 const CATEGORY_OPTIONS: { value: BrandGuidelineCategory; label: string }[] = [
@@ -73,6 +84,7 @@ function parseList(value: string) {
 export default function BrandGuidelinesPage() {
   const { currentOrganization, updateCurrentOrganization } = useAuth();
   const { toast } = useToast();
+  const brandGate = useFeatureGate("brand");
   const [guidelines, setGuidelines] = useState<BrandGuideline[]>([]);
   const [saving, setSaving] = useState(false);
   const [newGuideline, setNewGuideline] = useState<NewGuidelineForm>({
@@ -222,6 +234,52 @@ export default function BrandGuidelinesPage() {
           </Card>
         </div>
       </AuthGuard>
+    );
+  }
+
+  if (brandGate.loading) {
+    return (
+      <div className="flex items-center justify-center p-6">
+        <div className="flex items-center gap-2 rounded-lg border bg-card p-6 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span>Vérification des prérequis…</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (brandGate.error) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Impossible de charger les directives</CardTitle>
+            <CardDescription>{brandGate.error}</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!brandGate.hasAccess) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Disponible avec votre plan</CardTitle>
+            <CardDescription>
+              {brandGate.requiredPlanLabel
+                ? `Passez au plan ${brandGate.requiredPlanLabel} pour activer les directives de marque.`
+                : "Mettez à niveau votre offre pour activer les directives de marque."}
+            </CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Button asChild>
+              <Link href="/dashboard/settings/organization">Mettre à niveau</Link>
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
     );
   }
 
